@@ -19,6 +19,7 @@ export interface Tournament {
 }
 
 export interface TournamentDetail extends Tournament {
+  partidos: never[];
   // Campos adicionales que vendrán del endpoint de detalle
   descripcion?: string;
   reglas?: string;

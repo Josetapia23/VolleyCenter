@@ -13,6 +13,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { Tournament, TournamentDetail } from '../types/tournament';
+import TournamentService from '../services/api';
 
 type TournamentDetailScreenNavigationProp = StackNavigationProp<
     RootStackParamList,
@@ -31,8 +32,36 @@ interface Props {
 const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     const { tournament } = route.params;
     const [tournamentDetail, setTournamentDetail] = useState<TournamentDetail | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'info' | 'standings' | 'matches'>('info');
+
+    useEffect(() => {
+        loadTournamentDetail();
+    }, []);
+
+    const loadTournamentDetail = async () => {
+        try {
+            setLoading(true);
+
+            // Usar datos reales de la API
+            const data = await TournamentService.getTournamentById(tournament.id);
+            setTournamentDetail(data);
+
+        } catch (error) {
+            console.error('Error loading tournament detail:', error);
+
+            // Si hay error, mostrar mensaje pero mantener datos básicos del torneo
+            const basicTournamentDetail = {
+                ...tournament,
+                total_grupos: 0,
+                pasan_clasificados: 0,
+                partidos: []
+            };
+            setTournamentDetail(basicTournamentDetail);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -146,11 +175,139 @@ const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         </View>
     );
 
-    const MatchesTab = () => (
-        <View style={styles.tabContent}>
-            <Text style={styles.comingSoon}>Lista de partidos próximamente</Text>
-        </View>
-    );
+    const MatchesTab = () => {
+        if (loading || !tournamentDetail) {
+            return (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#1a237e" />
+                    <Text style={styles.loadingText}>Cargando partidos...</Text>
+                </View>
+            );
+        }
+
+        const matches = tournamentDetail.partidos || [];
+
+        return (
+            <View style={styles.tabContent}>
+                <Text style={styles.sectionTitle}>
+                    Partidos ({matches.length} total)
+                </Text>
+
+                {matches.length > 0 ? (
+                    matches.map((match) => (
+                        <View key={match.id} style={styles.matchCard}>
+                            <View style={styles.matchHeader}>
+                                <Text style={styles.matchDate}>
+                                    {formatDate(match.fecha)} - {match.hora}
+                                </Text>
+                                <View style={[
+                                    styles.matchStatusBadge,
+                                    { backgroundColor: getMatchStatusColor(match.estado) }
+                                ]}>
+                                    <Text style={styles.matchStatusText}>
+                                        {getMatchStatusLabel(match.estado)}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            <View style={styles.matchTeams}>
+                                <View style={styles.teamContainer}>
+                                    <Image
+                                        source={{ uri: match.equipo_1.logo }}
+                                        style={styles.teamLogo}
+                                        resizeMode="contain"
+                                    />
+                                    <View style={styles.teamInfo}>
+                                        <Text style={styles.teamName} numberOfLines={1}>
+                                            {match.equipo_1.nombre}
+                                        </Text>
+                                        <Text style={styles.teamGroup}>
+                                            {match.equipo_1.grupo}
+                                        </Text>
+                                    </View>
+                                    {match.resultado && (
+                                        <Text style={styles.teamSets}>
+                                            {match.resultado.sets_equipo_1}
+                                        </Text>
+                                    )}
+                                </View>
+
+                                <Text style={styles.vsText}>VS</Text>
+
+                                <View style={styles.teamContainer}>
+                                    <Image
+                                        source={{ uri: match.equipo_2.logo }}
+                                        style={styles.teamLogo}
+                                        resizeMode="contain"
+                                    />
+                                    <View style={styles.teamInfo}>
+                                        <Text style={styles.teamName} numberOfLines={1}>
+                                            {match.equipo_2.nombre}
+                                        </Text>
+                                        <Text style={styles.teamGroup}>
+                                            {match.equipo_2.grupo}
+                                        </Text>
+                                    </View>
+                                    {match.resultado && (
+                                        <Text style={styles.teamSets}>
+                                            {match.resultado.sets_equipo_2}
+                                        </Text>
+                                    )}
+                                </View>
+                            </View>
+
+                            {match.resultado && (
+                                <View style={styles.matchResult}>
+                                    <Text style={styles.resultTitle}>Resultado por sets:</Text>
+                                    <View style={styles.setsContainer}>
+                                        <Text style={styles.setScore}>
+                                            Set 1: {match.resultado.set_1_equipo_1} - {match.resultado.set_1_equipo_2}
+                                        </Text>
+                                        <Text style={styles.setScore}>
+                                            Set 2: {match.resultado.set_2_equipo_1} - {match.resultado.set_2_equipo_2}
+                                        </Text>
+                                        {(match.resultado.set_3_equipo_1 > 0 || match.resultado.set_3_equipo_2 > 0) && (
+                                            <Text style={styles.setScore}>
+                                                Set 3: {match.resultado.set_3_equipo_1} - {match.resultado.set_3_equipo_2}
+                                            </Text>
+                                        )}
+                                    </View>
+                                </View>
+                            )}
+                        </View>
+                    ))
+                ) : (
+                    <Text style={styles.comingSoon}>No hay partidos disponibles</Text>
+                )}
+            </View>
+        );
+    };
+
+    const getMatchStatusColor = (estado: string) => {
+        switch (estado) {
+            case 'finalizado':
+                return '#28a745';
+            case 'en_curso':
+                return '#ffc107';
+            case 'programado':
+                return '#6c757d';
+            default:
+                return '#6c757d';
+        }
+    };
+
+    const getMatchStatusLabel = (estado: string) => {
+        switch (estado) {
+            case 'finalizado':
+                return 'Finalizado';
+            case 'en_curso':
+                return 'En Curso';
+            case 'programado':
+                return 'Programado';
+            default:
+                return estado;
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -358,6 +515,108 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: 40,
         fontStyle: 'italic',
+    },
+    loadingContainer: {
+        alignItems: 'center',
+        paddingTop: 40,
+    },
+    loadingText: {
+        marginTop: 10,
+        fontSize: 16,
+        color: '#666',
+    },
+    matchCard: {
+        backgroundColor: 'white',
+        borderRadius: 8,
+        padding: 16,
+        marginBottom: 12,
+        elevation: 2,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+    },
+    matchHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    matchDate: {
+        fontSize: 14,
+        color: '#666',
+        fontWeight: '500',
+    },
+    matchStatusBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    matchStatusText: {
+        fontSize: 12,
+        color: 'white',
+        fontWeight: 'bold',
+    },
+    matchTeams: {
+        marginBottom: 12,
+    },
+    teamContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    teamLogo: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        marginRight: 12,
+    },
+    teamInfo: {
+        flex: 1,
+    },
+    teamName: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    teamGroup: {
+        fontSize: 12,
+        color: '#666',
+        marginTop: 2,
+    },
+    teamSets: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#1a237e',
+        minWidth: 30,
+        textAlign: 'center',
+    },
+    vsText: {
+        textAlign: 'center',
+        fontSize: 14,
+        color: '#666',
+        fontWeight: 'bold',
+        marginVertical: 4,
+    },
+    matchResult: {
+        backgroundColor: '#f8f9fa',
+        padding: 12,
+        borderRadius: 6,
+        marginTop: 8,
+    },
+    resultTitle: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 8,
+    },
+    setsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+    },
+    setScore: {
+        fontSize: 13,
+        color: '#666',
+        fontWeight: '500',
     },
 });
 
