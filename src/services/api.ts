@@ -1,6 +1,6 @@
 // src/services/api.ts
 import axios from 'axios';
-import { Tournament, TournamentDetail, Match, ApiResponse } from '../types/tournament';
+import { Tournament, TournamentDetail, Match, ApiResponse, Team } from '../types/tournament';
 
 // Configuración base de la API
 const BASE_URL = 'http://10.9.222.141/volleycenter-api'; // Cambia por tu URL real
@@ -41,6 +41,17 @@ class TournamentService {
       return response.data.data;
     } catch (error) {
       console.error('Error fetching tournament detail:', error);
+      throw error;
+    }
+  }
+
+  // Obtener equipos de un torneo
+  static async getTournamentTeams(id: number): Promise<Team[]> {
+    try {
+      const response = await api.get<ApiResponse<Team[]>>(`/v1/tournaments/teams.php?id=${id}`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching tournament teams:', error);
       throw error;
     }
   }

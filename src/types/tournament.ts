@@ -32,8 +32,16 @@ export interface Team {
   id: number;
   nombre: string;
   logo: string;
-  ciudad?: string;
+  departamento?: string;
+  municipio?: string;
+  telefono?: string;
+  pagina_web?: string;
+  director?: string;
+  email?: string;
   entrenador?: string;
+  tipo_equipo?: string;
+  estado?: string;
+  grupo?: string;
 }
 
 export interface TeamStanding {
