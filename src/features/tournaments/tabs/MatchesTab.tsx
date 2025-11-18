@@ -1,6 +1,6 @@
 // src/features/tournaments/tabs/MatchesTab.tsx
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { TournamentDetail, Match } from '../../../types/tournament';
 import { MatchCard } from '../../matches/components';
 import { LoadingSpinner, EmptyState } from '../../../shared/components';
@@ -19,7 +19,11 @@ const MatchesTab: React.FC<MatchesTabProps> = ({ tournamentDetail, loading }) =>
     const matches = tournamentDetail.partidos || [];
 
     return (
-        <View style={styles.tabContent}>
+        <ScrollView
+            style={styles.container}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.tabContent}
+        >
             <Text style={styles.sectionTitle}>
                 Partidos ({matches.length} total)
             </Text>
@@ -41,11 +45,14 @@ const MatchesTab: React.FC<MatchesTabProps> = ({ tournamentDetail, loading }) =>
                     subtitle="Los partidos aparecerán aquí cuando estén programados"
                 />
             )}
-        </View>
+        </ScrollView>
     );
 };
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
     tabContent: {
         padding: theme.spacing.base,
     },

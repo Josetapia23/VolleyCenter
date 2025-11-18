@@ -1,19 +1,26 @@
 // src/features/tournaments/tabs/StandingsTab.tsx
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
 const StandingsTab: React.FC = () => {
     return (
-        <View style={styles.tabContent}>
+        <ScrollView
+            style={styles.container}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.tabContent}
+        >
             <View style={styles.comingSoonContainer}>
                 <Text style={styles.sectionTitle}>Tabla de Posiciones</Text>
                 <Text style={styles.comingSoon}>Tabla de posiciones próximamente</Text>
             </View>
-        </View>
+        </ScrollView>
     );
 };
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
     tabContent: {
         padding: 16,
     },

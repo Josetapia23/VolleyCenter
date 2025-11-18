@@ -1,6 +1,6 @@
 // src/features/tournaments/tabs/InfoTab.tsx
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Tournament } from '../../../types/tournament';
 import { theme } from '../../../shared/theme';
 
@@ -20,7 +20,11 @@ const InfoTab: React.FC<InfoTabProps> = ({ tournament }) => {
     };
 
     return (
-        <View style={styles.tabContent}>
+        <ScrollView
+            style={styles.container}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.tabContent}
+        >
             <View style={styles.infoSection}>
                 <Text style={styles.sectionTitle}>Información General</Text>
 
@@ -91,11 +95,14 @@ const InfoTab: React.FC<InfoTabProps> = ({ tournament }) => {
                     </View>
                 </View>
             </View>
-        </View>
+        </ScrollView>
     );
 };
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
     tabContent: {
         padding: theme.spacing.base,
     },

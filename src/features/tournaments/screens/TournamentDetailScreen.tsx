@@ -1,12 +1,11 @@
 // src/features/tournaments/screens/TournamentDetailScreen.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
     ScrollView,
     Image,
     StyleSheet,
-    Animated,
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
@@ -27,18 +26,11 @@ interface Props {
 
 type TabKey = 'info' | 'teams' | 'standings' | 'matches';
 
-const HEADER_EXPANDED_HEIGHT = 120;
-const HEADER_COLLAPSED_HEIGHT = 0;
-
 const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     const { tournament } = route.params;
     const [tournamentDetail, setTournamentDetail] = useState<TournamentDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<TabKey>('info');
-
-    const scrollY = useRef(new Animated.Value(0)).current;
-    const headerVisible = useRef(new Animated.Value(1)).current;
-    const lastScrollY = useRef(0);
 
     const tabs: Tab[] = [
         { key: 'info', title: 'Información' },
@@ -87,60 +79,10 @@ const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         }
     };
 
-    // Detectar dirección del scroll - con animación más fluida
-    const handleScroll = (event: any) => {
-        const currentScrollY = event.nativeEvent.contentOffset.y;
-        const delta = currentScrollY - lastScrollY.current;
-
-        // Solo cambiar si el scroll es significativo (más de 3px para más respuesta)
-        if (Math.abs(delta) > 3) {
-            if (delta > 0 && currentScrollY > 30) {
-                // Scroll hacia abajo - ocultar header
-                Animated.spring(headerVisible, {
-                    toValue: 0,
-                    useNativeDriver: true,
-                    tension: 100,
-                    friction: 10,
-                }).start();
-            } else if (delta < 0 || currentScrollY < 30) {
-                // Scroll hacia arriba o cerca del top - mostrar header
-                Animated.spring(headerVisible, {
-                    toValue: 1,
-                    useNativeDriver: true,
-                    tension: 100,
-                    friction: 10,
-                }).start();
-            }
-            lastScrollY.current = currentScrollY;
-        }
-
-        scrollY.setValue(currentScrollY);
-    };
-
-    // Interpolar solo opacidad con native driver para mejor performance
-    const headerOpacity = headerVisible.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0, 1],
-    });
-
-    // Transformar usando translateY en vez de height para mejor performance
-    const headerTranslateY = headerVisible.interpolate({
-        inputRange: [0, 1],
-        outputRange: [-HEADER_EXPANDED_HEIGHT, 0],
-    });
-
     return (
         <View style={styles.container}>
-            {/* Header Colapsable - Se oculta completamente */}
-            <Animated.View
-                style={[
-                    styles.header,
-                    {
-                        opacity: headerOpacity,
-                        transform: [{ translateY: headerTranslateY }],
-                    }
-                ]}
-            >
+            {/* Header estático */}
+            <View style={styles.header}>
                 <View style={styles.headerContent}>
                     <Image
                         source={{ uri: tournament.foto_torneo }}
@@ -169,18 +111,13 @@ const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
                         </View>
                     </View>
                 </View>
-            </Animated.View>
+            </View>
 
             <ScrollableTabs tabs={tabs} activeTab={activeTab} onTabPress={handleTabPress} />
 
-            <Animated.ScrollView
-                style={styles.content}
-                showsVerticalScrollIndicator={false}
-                onScroll={handleScroll}
-                scrollEventThrottle={16}
-            >
+            <View style={styles.content}>
                 {renderTabContent()}
-            </Animated.ScrollView>
+            </View>
         </View>
     );
 };
@@ -194,12 +131,11 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
-        height: HEADER_EXPANDED_HEIGHT,
+        height: 120,
         backgroundColor: theme.colors.backgroundCard,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.border,
         ...theme.getCardShadow('sm'),
-        overflow: 'hidden',
     },
     headerContent: {
         flexDirection: 'row',
