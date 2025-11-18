@@ -76,19 +76,19 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onPress }) => {
             {match.resultado && (
                 <View style={styles.setsResultContainer}>
                     <Text style={styles.setsResultTitle}>Resultado por sets:</Text>
-                    <View style={styles.setsRow}>
+                    <View style={styles.setsColumn}>
                         <Text style={styles.setResult}>
                             Set 1: {match.resultado.set_1_equipo_1} - {match.resultado.set_1_equipo_2}
                         </Text>
                         <Text style={styles.setResult}>
                             Set 2: {match.resultado.set_2_equipo_1} - {match.resultado.set_2_equipo_2}
                         </Text>
+                        {match.resultado.set_3_equipo_1 !== undefined && (
+                            <Text style={styles.setResult}>
+                                Set 3: {match.resultado.set_3_equipo_1} - {match.resultado.set_3_equipo_2}
+                            </Text>
+                        )}
                     </View>
-                    {match.resultado.set_3_equipo_1 !== undefined && (
-                        <Text style={styles.setResult}>
-                            Set 3: {match.resultado.set_3_equipo_1} - {match.resultado.set_3_equipo_2}
-                        </Text>
-                    )}
                 </View>
             )}
         </Container>
@@ -177,17 +177,16 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.md,
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.textPrimary,
-        marginBottom: theme.spacing.md,
-    },
-    setsRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
         marginBottom: theme.spacing.sm,
     },
+    setsColumn: {
+        gap: theme.spacing.sm,
+    },
     setResult: {
-        fontSize: theme.typography.fontSize.sm + 1,
-        color: theme.colors.textSecondary,
-        fontWeight: theme.typography.fontWeight.medium,
+        fontSize: theme.typography.fontSize.base,
+        color: theme.colors.textPrimary,
+        fontWeight: theme.typography.fontWeight.semibold,
+        paddingVertical: theme.spacing.xs,
     },
 });
 

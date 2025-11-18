@@ -173,15 +173,13 @@ const MatchesTab: React.FC<MatchesTabProps> = ({ tournamentDetail, loading }) =>
                     Partidos del Torneo ({matches.length})
                 </Text>
 
-                {(groups.length > 0 || matches.some(m => isToday(m.fecha))) && (
-                    <Select
-                        options={getFilterOptions()}
-                        value={selectedFilter}
-                        onChange={setSelectedFilter}
-                        placeholder="Seleccionar filtro"
-                        label="Filtrar partidos"
-                    />
-                )}
+                <Select
+                    options={getFilterOptions()}
+                    value={selectedFilter}
+                    onChange={setSelectedFilter}
+                    placeholder="Seleccionar filtro"
+                    label="Filtrar partidos"
+                />
             </View>
 
             {/* Contenido scrolleable */}
