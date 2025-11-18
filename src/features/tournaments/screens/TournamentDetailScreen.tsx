@@ -37,6 +37,7 @@ const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     const [activeTab, setActiveTab] = useState<TabKey>('info');
 
     const scrollY = useRef(new Animated.Value(0)).current;
+    const headerVisible = useRef(new Animated.Value(1)).current;
     const lastScrollY = useRef(0);
 
     const tabs: Tab[] = [
@@ -86,17 +87,43 @@ const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         }
     };
 
-    // Animación del header - se oculta completamente al hacer scroll
-    const headerHeight = scrollY.interpolate({
-        inputRange: [0, 80],
-        outputRange: [HEADER_EXPANDED_HEIGHT, HEADER_COLLAPSED_HEIGHT],
-        extrapolate: 'clamp',
+    // Detectar dirección del scroll
+    const handleScroll = (event: any) => {
+        const currentScrollY = event.nativeEvent.contentOffset.y;
+        const delta = currentScrollY - lastScrollY.current;
+
+        // Solo cambiar si el scroll es significativo (más de 5px)
+        if (Math.abs(delta) > 5) {
+            if (delta > 0 && currentScrollY > 50) {
+                // Scroll hacia abajo - ocultar header
+                Animated.timing(headerVisible, {
+                    toValue: 0,
+                    duration: 250,
+                    useNativeDriver: false,
+                }).start();
+            } else if (delta < 0 || currentScrollY < 50) {
+                // Scroll hacia arriba o cerca del top - mostrar header
+                Animated.timing(headerVisible, {
+                    toValue: 1,
+                    duration: 250,
+                    useNativeDriver: false,
+                }).start();
+            }
+            lastScrollY.current = currentScrollY;
+        }
+
+        scrollY.setValue(currentScrollY);
+    };
+
+    // Interpolar altura y opacidad basándose en headerVisible
+    const headerHeight = headerVisible.interpolate({
+        inputRange: [0, 1],
+        outputRange: [HEADER_COLLAPSED_HEIGHT, HEADER_EXPANDED_HEIGHT],
     });
 
-    const headerOpacity = scrollY.interpolate({
-        inputRange: [0, 60, 80],
-        outputRange: [1, 0.5, 0],
-        extrapolate: 'clamp',
+    const headerOpacity = headerVisible.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 1],
     });
 
     return (
@@ -146,10 +173,7 @@ const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
             <Animated.ScrollView
                 style={styles.content}
                 showsVerticalScrollIndicator={false}
-                onScroll={Animated.event(
-                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                    { useNativeDriver: false }
-                )}
+                onScroll={handleScroll}
                 scrollEventThrottle={16}
             >
                 {renderTabContent()}
