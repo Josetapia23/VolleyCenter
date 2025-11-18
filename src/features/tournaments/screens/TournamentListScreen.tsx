@@ -1,18 +1,19 @@
 // src/features/tournaments/screens/TournamentListScreen.tsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
     ScrollView,
     StyleSheet,
     RefreshControl,
+    Alert,
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../../navigation/AppNavigator';
 import { Tournament } from '../../../types/tournament';
+import TournamentService from '../../../services/api';
 import { TournamentCard } from '../components';
 import { LoadingSpinner, EmptyState } from '../../../shared/components';
-import { useTournaments } from '../../../shared/hooks';
 import { theme } from '../../../shared/theme';
 
 type TournamentListScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
@@ -22,7 +23,31 @@ interface Props {
 }
 
 const TournamentListScreen: React.FC<Props> = ({ navigation }) => {
-    const { tournaments, loading, refreshing, refresh } = useTournaments();
+    const [tournaments, setTournaments] = useState<Tournament[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+
+    useEffect(() => {
+        loadTournaments();
+    }, []);
+
+    const loadTournaments = async () => {
+        try {
+            const data = await TournamentService.getActiveTournaments();
+            setTournaments(data);
+        } catch (error) {
+            Alert.alert('Error', 'No se pudieron cargar los torneos');
+            console.error('Error loading tournaments:', error);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        loadTournaments();
+    };
 
     const handleTournamentPress = (tournament: Tournament) => {
         navigation.navigate('TournamentDetail', { tournament });
@@ -39,7 +64,7 @@ const TournamentListScreen: React.FC<Props> = ({ navigation }) => {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={refresh} />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                 }
             >
                 <Text style={styles.sectionTitle}>Todos los Torneos</Text>

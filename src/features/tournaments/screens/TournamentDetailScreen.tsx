@@ -1,5 +1,5 @@
 // src/features/tournaments/screens/TournamentDetailScreen.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -10,9 +10,10 @@ import {
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../../navigation/AppNavigator';
+import { TournamentDetail } from '../../../types/tournament';
+import TournamentService from '../../../services/api';
 import { ScrollableTabs, Tab } from '../../../shared/components';
 import { InfoTab, TeamsTab, StandingsTab, MatchesTab } from '../tabs';
-import { useTournamentDetail } from '../../../shared/hooks';
 import { theme } from '../../../shared/theme';
 
 type TournamentDetailScreenNavigationProp = StackNavigationProp<RootStackParamList, 'TournamentDetail'>;
@@ -27,7 +28,8 @@ type TabKey = 'info' | 'teams' | 'standings' | 'matches';
 
 const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     const { tournament } = route.params;
-    const { tournamentDetail, loading } = useTournamentDetail({ tournament });
+    const [tournamentDetail, setTournamentDetail] = useState<TournamentDetail | null>(null);
+    const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<TabKey>('info');
 
     const tabs: Tab[] = [
@@ -36,6 +38,27 @@ const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         { key: 'standings', title: 'Posiciones' },
         { key: 'matches', title: 'Partidos' },
     ];
+
+    useEffect(() => {
+        loadTournamentDetail();
+    }, []);
+
+    const loadTournamentDetail = async () => {
+        try {
+            setLoading(true);
+            const data = await TournamentService.getTournamentById(tournament.id);
+            setTournamentDetail(data);
+        } catch (error) {
+            console.error('Error loading tournament detail:', error);
+            const basicTournamentDetail = {
+                ...tournament,
+                partidos: []
+            };
+            setTournamentDetail(basicTournamentDetail);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleTabPress = (tabKey: string) => {
         setActiveTab(tabKey as TabKey);
