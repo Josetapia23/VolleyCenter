@@ -1,11 +1,12 @@
 // src/features/tournaments/screens/TournamentDetailScreen.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
     ScrollView,
     Image,
     StyleSheet,
+    Animated,
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
@@ -14,7 +15,7 @@ import { TournamentDetail } from '../../../types/tournament';
 import TournamentService from '../../../services/api';
 import { ScrollableTabs, Tab } from '../../../shared/components';
 import { InfoTab, TeamsTab, StandingsTab, MatchesTab } from '../tabs';
-import { theme } from '../../../shared/theme';
+import { theme, getStatusColor } from '../../../shared/theme';
 
 type TournamentDetailScreenNavigationProp = StackNavigationProp<RootStackParamList, 'TournamentDetail'>;
 type TournamentDetailScreenRouteProp = RouteProp<RootStackParamList, 'TournamentDetail'>;
@@ -26,11 +27,17 @@ interface Props {
 
 type TabKey = 'info' | 'teams' | 'standings' | 'matches';
 
+const HEADER_EXPANDED_HEIGHT = 120;
+const HEADER_COLLAPSED_HEIGHT = 60;
+
 const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     const { tournament } = route.params;
     const [tournamentDetail, setTournamentDetail] = useState<TournamentDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<TabKey>('info');
+
+    const scrollY = useRef(new Animated.Value(0)).current;
+    const lastScrollY = useRef(0);
 
     const tabs: Tab[] = [
         { key: 'info', title: 'Información' },
@@ -79,27 +86,102 @@ const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         }
     };
 
+    // Animación del header
+    const headerHeight = scrollY.interpolate({
+        inputRange: [0, 100],
+        outputRange: [HEADER_EXPANDED_HEIGHT, HEADER_COLLAPSED_HEIGHT],
+        extrapolate: 'clamp',
+    });
+
+    const imageOpacity = scrollY.interpolate({
+        inputRange: [0, 50],
+        outputRange: [1, 0],
+        extrapolate: 'clamp',
+    });
+
+    const imageSize = scrollY.interpolate({
+        inputRange: [0, 50],
+        outputRange: [80, 0],
+        extrapolate: 'clamp',
+    });
+
+    const titleFontSize = scrollY.interpolate({
+        inputRange: [0, 100],
+        outputRange: [20, 16],
+        extrapolate: 'clamp',
+    });
+
+    const subtitleOpacity = scrollY.interpolate({
+        inputRange: [0, 50],
+        outputRange: [1, 0],
+        extrapolate: 'clamp',
+    });
+
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <Image
-                    source={{ uri: tournament.foto_torneo }}
-                    style={styles.tournamentImage}
-                    resizeMode="cover"
-                />
-                <View style={styles.headerOverlay}>
-                    <Text style={styles.tournamentTitle}>{tournament.nombre}</Text>
-                    <Text style={styles.tournamentSubtitle}>
-                        {tournament.municipio}, {tournament.departamento}
-                    </Text>
+            {/* Header Colapsable */}
+            <Animated.View style={[styles.header, { height: headerHeight }]}>
+                <View style={styles.headerContent}>
+                    <Animated.View
+                        style={[
+                            styles.imageContainer,
+                            {
+                                opacity: imageOpacity,
+                                width: imageSize,
+                                height: imageSize,
+                            }
+                        ]}
+                    >
+                        <Image
+                            source={{ uri: tournament.foto_torneo }}
+                            style={styles.tournamentImage}
+                            resizeMode="cover"
+                        />
+                    </Animated.View>
+
+                    <View style={styles.headerInfo}>
+                        <Animated.Text
+                            style={[
+                                styles.tournamentTitle,
+                                { fontSize: titleFontSize }
+                            ]}
+                            numberOfLines={1}
+                        >
+                            {tournament.nombre}
+                        </Animated.Text>
+
+                        <Animated.View style={{ opacity: subtitleOpacity }}>
+                            <Text style={styles.tournamentLocation} numberOfLines={1}>
+                                📍 {tournament.municipio}, {tournament.departamento}
+                            </Text>
+                            <View style={styles.statusContainer}>
+                                <View
+                                    style={[
+                                        styles.statusBadge,
+                                        { backgroundColor: getStatusColor(tournament.estado) }
+                                    ]}
+                                >
+                                    <Text style={styles.statusText}>{tournament.estado}</Text>
+                                </View>
+                            </View>
+                        </Animated.View>
+                    </View>
                 </View>
-            </View>
+            </Animated.View>
 
             <ScrollableTabs tabs={tabs} activeTab={activeTab} onTabPress={handleTabPress} />
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <Animated.ScrollView
+                style={styles.content}
+                showsVerticalScrollIndicator={false}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+                scrollEventThrottle={16}
+            >
                 {renderTabContent()}
-            </ScrollView>
+            </Animated.ScrollView>
         </View>
     );
 };
@@ -113,30 +195,56 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
-        height: 200,
-        position: 'relative',
+        backgroundColor: theme.colors.backgroundCard,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
+        ...theme.getCardShadow('sm'),
+        overflow: 'hidden',
+    },
+    headerContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: theme.spacing.base,
+        height: '100%',
+    },
+    imageContainer: {
+        marginRight: theme.spacing.md,
+        borderRadius: theme.borderRadius.lg,
+        overflow: 'hidden',
     },
     tournamentImage: {
         width: '100%',
         height: '100%',
     },
-    headerOverlay: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: theme.colors.backgroundOverlay,
-        padding: theme.spacing.lg,
+    headerInfo: {
+        flex: 1,
+        justifyContent: 'center',
     },
     tournamentTitle: {
-        fontSize: theme.typography.fontSize.xxl,
         fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.textInverse,
+        color: theme.colors.textPrimary,
         marginBottom: theme.spacing.xs,
     },
-    tournamentSubtitle: {
-        fontSize: theme.typography.fontSize.base,
-        color: 'rgba(255, 255, 255, 0.8)',
+    tournamentLocation: {
+        fontSize: theme.typography.fontSize.sm,
+        color: theme.colors.textSecondary,
+        marginBottom: theme.spacing.xs,
+    },
+    statusContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    statusBadge: {
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.xs,
+        borderRadius: theme.borderRadius.xl,
+        alignSelf: 'flex-start',
+    },
+    statusText: {
+        fontSize: theme.typography.fontSize.xs,
+        color: theme.colors.textInverse,
+        fontWeight: theme.typography.fontWeight.bold,
+        textTransform: 'uppercase',
     },
 });
 
