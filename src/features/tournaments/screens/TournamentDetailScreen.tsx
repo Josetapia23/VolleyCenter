@@ -28,7 +28,7 @@ interface Props {
 type TabKey = 'info' | 'teams' | 'standings' | 'matches';
 
 const HEADER_EXPANDED_HEIGHT = 120;
-const HEADER_COLLAPSED_HEIGHT = 60;
+const HEADER_COLLAPSED_HEIGHT = 0;
 
 const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     const { tournament } = route.params;
@@ -86,85 +86,57 @@ const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         }
     };
 
-    // Animación del header
+    // Animación del header - se oculta completamente al hacer scroll
     const headerHeight = scrollY.interpolate({
-        inputRange: [0, 100],
+        inputRange: [0, 80],
         outputRange: [HEADER_EXPANDED_HEIGHT, HEADER_COLLAPSED_HEIGHT],
         extrapolate: 'clamp',
     });
 
-    const imageOpacity = scrollY.interpolate({
-        inputRange: [0, 50],
-        outputRange: [1, 0],
-        extrapolate: 'clamp',
-    });
-
-    const imageSize = scrollY.interpolate({
-        inputRange: [0, 50],
-        outputRange: [80, 0],
-        extrapolate: 'clamp',
-    });
-
-    const titleFontSize = scrollY.interpolate({
-        inputRange: [0, 100],
-        outputRange: [20, 16],
-        extrapolate: 'clamp',
-    });
-
-    const subtitleOpacity = scrollY.interpolate({
-        inputRange: [0, 50],
-        outputRange: [1, 0],
+    const headerOpacity = scrollY.interpolate({
+        inputRange: [0, 60, 80],
+        outputRange: [1, 0.5, 0],
         extrapolate: 'clamp',
     });
 
     return (
         <View style={styles.container}>
-            {/* Header Colapsable */}
-            <Animated.View style={[styles.header, { height: headerHeight }]}>
+            {/* Header Colapsable - Se oculta completamente */}
+            <Animated.View
+                style={[
+                    styles.header,
+                    {
+                        height: headerHeight,
+                        opacity: headerOpacity,
+                    }
+                ]}
+            >
                 <View style={styles.headerContent}>
-                    <Animated.View
-                        style={[
-                            styles.imageContainer,
-                            {
-                                opacity: imageOpacity,
-                                width: imageSize,
-                                height: imageSize,
-                            }
-                        ]}
-                    >
-                        <Image
-                            source={{ uri: tournament.foto_torneo }}
-                            style={styles.tournamentImage}
-                            resizeMode="cover"
-                        />
-                    </Animated.View>
+                    <Image
+                        source={{ uri: tournament.foto_torneo }}
+                        style={styles.tournamentImage}
+                        resizeMode="cover"
+                    />
 
                     <View style={styles.headerInfo}>
-                        <Animated.Text
-                            style={[
-                                styles.tournamentTitle,
-                                { fontSize: titleFontSize }
-                            ]}
-                            numberOfLines={1}
-                        >
+                        <Text style={styles.tournamentTitle} numberOfLines={1}>
                             {tournament.nombre}
-                        </Animated.Text>
+                        </Text>
 
-                        <Animated.View style={{ opacity: subtitleOpacity }}>
-                            <Text style={styles.tournamentLocation} numberOfLines={1}>
-                                📍 {tournament.municipio}, {tournament.departamento}
-                            </Text>
-                            <View style={styles.statusContainer}>
-                                <View
-                                    style={[
-                                        styles.statusBadge,
-                                        { backgroundColor: getStatusColor(tournament.estado) }
-                                    ]}
-                                >
-                                    <Text style={styles.statusText}>{tournament.estado}</Text>
-                                </View>
+                        <Text style={styles.tournamentLocation} numberOfLines={1}>
+                            📍 {tournament.municipio}, {tournament.departamento}
+                        </Text>
+
+                        <View style={styles.statusContainer}>
+                            <View
+                                style={[
+                                    styles.statusBadge,
+                                    { backgroundColor: getStatusColor(tournament.estado) }
+                                ]}
+                            >
+                                <Text style={styles.statusText}>{tournament.estado}</Text>
                             </View>
-                        </Animated.View>
+                        </View>
                     </View>
                 </View>
             </Animated.View>
@@ -207,20 +179,18 @@ const styles = StyleSheet.create({
         padding: theme.spacing.base,
         height: '100%',
     },
-    imageContainer: {
-        marginRight: theme.spacing.md,
-        borderRadius: theme.borderRadius.lg,
-        overflow: 'hidden',
-    },
     tournamentImage: {
-        width: '100%',
-        height: '100%',
+        width: 80,
+        height: 80,
+        borderRadius: theme.borderRadius.lg,
+        marginRight: theme.spacing.md,
     },
     headerInfo: {
         flex: 1,
         justifyContent: 'center',
     },
     tournamentTitle: {
+        fontSize: theme.typography.fontSize.lg,
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.textPrimary,
         marginBottom: theme.spacing.xs,
