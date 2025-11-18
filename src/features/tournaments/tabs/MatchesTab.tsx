@@ -20,10 +20,18 @@ const MatchesTab: React.FC<MatchesTabProps> = ({ tournamentDetail, loading }) =>
 
     const matches = tournamentDetail.partidos || [];
 
+    // Debug: Ver qué datos vienen en los partidos
+    console.log('Partidos recibidos:', matches.length);
+    if (matches.length > 0) {
+        console.log('Primer partido ejemplo:', JSON.stringify(matches[0], null, 2));
+    }
+
     // Obtener grupos únicos de los partidos
     const groups = Array.from(
         new Set(matches.map(match => match.grupo).filter(Boolean))
     ).sort() as string[];
+
+    console.log('Grupos encontrados:', groups);
 
     // Función para verificar si un partido es hoy
     const isToday = (dateString: string) => {
