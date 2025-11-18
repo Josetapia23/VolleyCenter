@@ -87,26 +87,28 @@ const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         }
     };
 
-    // Detectar dirección del scroll
+    // Detectar dirección del scroll - con animación más fluida
     const handleScroll = (event: any) => {
         const currentScrollY = event.nativeEvent.contentOffset.y;
         const delta = currentScrollY - lastScrollY.current;
 
-        // Solo cambiar si el scroll es significativo (más de 5px)
-        if (Math.abs(delta) > 5) {
-            if (delta > 0 && currentScrollY > 50) {
+        // Solo cambiar si el scroll es significativo (más de 3px para más respuesta)
+        if (Math.abs(delta) > 3) {
+            if (delta > 0 && currentScrollY > 30) {
                 // Scroll hacia abajo - ocultar header
-                Animated.timing(headerVisible, {
+                Animated.spring(headerVisible, {
                     toValue: 0,
-                    duration: 250,
-                    useNativeDriver: false,
+                    useNativeDriver: true,
+                    tension: 100,
+                    friction: 10,
                 }).start();
-            } else if (delta < 0 || currentScrollY < 50) {
+            } else if (delta < 0 || currentScrollY < 30) {
                 // Scroll hacia arriba o cerca del top - mostrar header
-                Animated.timing(headerVisible, {
+                Animated.spring(headerVisible, {
                     toValue: 1,
-                    duration: 250,
-                    useNativeDriver: false,
+                    useNativeDriver: true,
+                    tension: 100,
+                    friction: 10,
                 }).start();
             }
             lastScrollY.current = currentScrollY;
@@ -115,15 +117,16 @@ const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         scrollY.setValue(currentScrollY);
     };
 
-    // Interpolar altura y opacidad basándose en headerVisible
-    const headerHeight = headerVisible.interpolate({
-        inputRange: [0, 1],
-        outputRange: [HEADER_COLLAPSED_HEIGHT, HEADER_EXPANDED_HEIGHT],
-    });
-
+    // Interpolar solo opacidad con native driver para mejor performance
     const headerOpacity = headerVisible.interpolate({
         inputRange: [0, 1],
         outputRange: [0, 1],
+    });
+
+    // Transformar usando translateY en vez de height para mejor performance
+    const headerTranslateY = headerVisible.interpolate({
+        inputRange: [0, 1],
+        outputRange: [-HEADER_EXPANDED_HEIGHT, 0],
     });
 
     return (
@@ -191,6 +194,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
+        height: HEADER_EXPANDED_HEIGHT,
         backgroundColor: theme.colors.backgroundCard,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.border,

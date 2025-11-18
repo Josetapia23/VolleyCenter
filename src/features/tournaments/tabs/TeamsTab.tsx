@@ -129,7 +129,7 @@ const TeamsTab: React.FC<TeamsTabProps> = ({ tournamentId }) => {
         // Si hay un filtro activo, mostrar lista simple
         if (selectedGroup) {
             return (
-                <View>
+                <>
                     <Text style={styles.groupHeader}>
                         Grupo {selectedGroup} - {filteredTeams.length} {filteredTeams.length === 1 ? 'equipo' : 'equipos'}
                     </Text>
@@ -142,13 +142,13 @@ const TeamsTab: React.FC<TeamsTabProps> = ({ tournamentId }) => {
                             }}
                         />
                     ))}
-                </View>
+                </>
             );
         }
 
         // Si no hay filtro, mostrar agrupado
         return (
-            <View>
+            <>
                 {Object.entries(teamsByGroup).map(([group, groupTeams]) => (
                     <View key={group} style={styles.groupSection}>
                         <View style={styles.groupHeaderContainer}>
@@ -172,7 +172,7 @@ const TeamsTab: React.FC<TeamsTabProps> = ({ tournamentId }) => {
                         ))}
                     </View>
                 ))}
-            </View>
+            </>
         );
     };
 
@@ -188,18 +188,46 @@ const TeamsTab: React.FC<TeamsTabProps> = ({ tournamentId }) => {
     }
 
     return (
-        <View style={styles.tabContent}>
-            <Text style={styles.sectionTitle}>
-                Equipos Participantes ({teams.length})
-            </Text>
+        <View style={styles.container}>
+            {/* Header fijo con título y filtros */}
+            <View style={styles.fixedHeader}>
+                <Text style={styles.sectionTitle}>
+                    Equipos Participantes ({teams.length})
+                </Text>
+                {renderGroupFilter()}
+            </View>
 
-            {renderGroupFilter()}
-            {renderTeamsList()}
+            {/* Contenido scrolleable */}
+            <ScrollView
+                style={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContentContainer}
+            >
+                {renderTeamsList()}
+            </ScrollView>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+    fixedHeader: {
+        backgroundColor: theme.colors.background,
+        paddingHorizontal: theme.spacing.base,
+        paddingTop: theme.spacing.base,
+        paddingBottom: theme.spacing.sm,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
+        ...theme.getCardShadow('sm'),
+    },
+    scrollContent: {
+        flex: 1,
+    },
+    scrollContentContainer: {
+        padding: theme.spacing.base,
+    },
     tabContent: {
         padding: theme.spacing.base,
     },
@@ -207,10 +235,10 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.lg,
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.primary,
-        marginBottom: theme.spacing.base,
+        marginBottom: theme.spacing.sm,
     },
     filterContainer: {
-        marginBottom: theme.spacing.base,
+        marginBottom: 0,
     },
     filterLabel: {
         fontSize: theme.typography.fontSize.md,
@@ -258,6 +286,7 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.base,
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.primary,
+        marginBottom: theme.spacing.md,
     },
     groupBadge: {
         backgroundColor: theme.colors.primary,
