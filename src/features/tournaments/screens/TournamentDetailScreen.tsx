@@ -10,10 +10,10 @@ import {
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
-import { RootStackParamList } from '../navigation/AppNavigator';
-import { Team, Tournament, TournamentDetail } from '../types/tournament';
-import TournamentService from '../services/api';
-import { ScrollableTabs, Tab } from '../shared/components';
+import { RootStackParamList } from '../../../navigation/AppNavigator';
+import { Team, Tournament, TournamentDetail } from '../../../types/tournament';
+import TournamentService from '../../../services/api';
+import { ScrollableTabs, Tab } from '../../../shared/components';
 
 type TournamentDetailScreenNavigationProp = StackNavigationProp<RootStackParamList, 'TournamentDetail'>;
 type TournamentDetailScreenRouteProp = RouteProp<RootStackParamList, 'TournamentDetail'>;

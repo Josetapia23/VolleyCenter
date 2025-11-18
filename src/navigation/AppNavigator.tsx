@@ -4,21 +4,20 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Tournament } from '../types/tournament';
 
-// Importar las pantallas (las crearemos después)
-import HomeScreen from '../screens/HomeScreen';
-import TournamentDetailScreen from '../screens/TournamentDetailScreen';
-import MatchDetailScreen from '../screens/MatchDetailScreen';
+// Importar screens desde features
+import {
+    TournamentListScreen,
+    TournamentDetailScreen
+} from '../features/tournaments/screens';
 
-// Definir los tipos de parámetros para cada pantalla
 export type RootStackParamList = {
     Home: undefined;
     TournamentDetail: { tournament: Tournament };
-    MatchDetail: { matchId: number };
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
 
-const AppNavigator: React.FC = () => {
+const AppNavigator = () => {
     return (
         <NavigationContainer>
             <Stack.Navigator
@@ -35,26 +34,16 @@ const AppNavigator: React.FC = () => {
             >
                 <Stack.Screen
                     name="Home"
-                    component={HomeScreen}
+                    component={TournamentListScreen}
                     options={{
                         title: 'VolleyCenter',
-                        headerStyle: {
-                            backgroundColor: '#1a237e',
-                        },
                     }}
                 />
                 <Stack.Screen
                     name="TournamentDetail"
                     component={TournamentDetailScreen}
-                    options={({ route }) => ({
-                        title: route.params.tournament.nombre,
-                    })}
-                />
-                <Stack.Screen
-                    name="MatchDetail"
-                    component={MatchDetailScreen}
                     options={{
-                        title: 'Detalle del Partido',
+                        title: 'Detalle del Torneo',
                     }}
                 />
             </Stack.Navigator>
