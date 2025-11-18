@@ -136,8 +136,8 @@ const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
                 style={[
                     styles.header,
                     {
-                        height: headerHeight,
                         opacity: headerOpacity,
+                        transform: [{ translateY: headerTranslateY }],
                     }
                 ]}
             >
