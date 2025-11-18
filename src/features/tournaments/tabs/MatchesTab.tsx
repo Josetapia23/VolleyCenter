@@ -1,9 +1,9 @@
 // src/features/tournaments/tabs/MatchesTab.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { TournamentDetail, Match } from '../../../types/tournament';
 import { MatchCard } from '../../matches/components';
-import { LoadingSpinner, EmptyState } from '../../../shared/components';
+import { LoadingSpinner, EmptyState, Select, SelectOption } from '../../../shared/components';
 import { theme } from '../../../shared/theme';
 
 interface MatchesTabProps {
@@ -12,46 +12,208 @@ interface MatchesTabProps {
 }
 
 const MatchesTab: React.FC<MatchesTabProps> = ({ tournamentDetail, loading }) => {
+    const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+
     if (loading || !tournamentDetail) {
         return <LoadingSpinner message="Cargando partidos..." />;
     }
 
     const matches = tournamentDetail.partidos || [];
 
-    return (
-        <ScrollView
-            style={styles.container}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.tabContent}
-        >
-            <Text style={styles.sectionTitle}>
-                Partidos ({matches.length} total)
-            </Text>
+    // Obtener grupos únicos de los partidos
+    const groups = Array.from(
+        new Set(matches.map(match => match.grupo).filter(Boolean))
+    ).sort() as string[];
 
-            {matches.length > 0 ? (
-                matches.map((match: Match, index: number) => (
-                    <MatchCard
-                        key={match.id || index}
-                        match={match}
-                        onPress={() => {
-                            // TODO: Navegar al detalle del partido
-                            console.log('Partido seleccionado:', match.id);
-                        }}
-                    />
-                ))
-            ) : (
+    // Función para verificar si un partido es hoy
+    const isToday = (dateString: string) => {
+        const matchDate = new Date(dateString);
+        const today = new Date();
+        return matchDate.toDateString() === today.toDateString();
+    };
+
+    // Filtrar partidos según la selección
+    const getFilteredMatches = () => {
+        if (selectedFilter === 'today') {
+            return matches.filter(match => isToday(match.fecha));
+        } else if (selectedFilter) {
+            return matches.filter(match => match.grupo === selectedFilter);
+        }
+        return matches;
+    };
+
+    const filteredMatches = getFilteredMatches();
+
+    // Agrupar partidos por grupo
+    const matchesByGroup = matches.reduce((acc, match) => {
+        const group = match.grupo || 'Sin Grupo';
+        if (!acc[group]) {
+            acc[group] = [];
+        }
+        acc[group].push(match);
+        return acc;
+    }, {} as Record<string, Match[]>);
+
+    // Opciones para el selector
+    const getFilterOptions = (): SelectOption[] => {
+        const todayMatches = matches.filter(match => isToday(match.fecha));
+
+        const options: SelectOption[] = [
+            {
+                label: `Todos los partidos (${matches.length})`,
+                value: null,
+                count: matches.length,
+            },
+        ];
+
+        // Agregar opción de "Partidos de Hoy" si hay partidos hoy
+        if (todayMatches.length > 0) {
+            options.push({
+                label: `🔴 Partidos de Hoy`,
+                value: 'today',
+                count: todayMatches.length,
+            });
+        }
+
+        // Agregar grupos
+        groups.forEach((group) => {
+            const count = matches.filter(m => m.grupo === group).length;
+            options.push({
+                label: `Grupo ${group}`,
+                value: group,
+                count,
+            });
+        });
+
+        return options;
+    };
+
+    const renderMatchesList = () => {
+        if (filteredMatches.length === 0) {
+            const emptyMessage = selectedFilter === 'today'
+                ? 'No hay partidos programados para hoy'
+                : selectedFilter
+                    ? 'No hay partidos en este grupo'
+                    : 'No hay partidos disponibles';
+
+            return (
+                <EmptyState
+                    message={emptyMessage}
+                    subtitle={selectedFilter ? 'Selecciona otro filtro' : 'Los partidos aparecerán aquí cuando estén programados'}
+                />
+            );
+        }
+
+        // Si hay un filtro activo, mostrar lista simple
+        if (selectedFilter) {
+            return (
+                <>
+                    <Text style={styles.groupHeader}>
+                        {selectedFilter === 'today' ? '🔴 Partidos de Hoy' : `Grupo ${selectedFilter}`} - {filteredMatches.length} {filteredMatches.length === 1 ? 'partido' : 'partidos'}
+                    </Text>
+                    {filteredMatches.map((match: Match, index: number) => (
+                        <MatchCard
+                            key={match.id || index}
+                            match={match}
+                            onPress={() => {
+                                console.log('Partido seleccionado:', match.id);
+                            }}
+                        />
+                    ))}
+                </>
+            );
+        }
+
+        // Si no hay filtro, mostrar agrupado por grupo
+        return (
+            <>
+                {Object.entries(matchesByGroup).map(([group, groupMatches]) => (
+                    <View key={group} style={styles.groupSection}>
+                        <View style={styles.groupHeaderContainer}>
+                            <Text style={styles.groupHeader}>
+                                {group === 'Sin Grupo' ? group : `Grupo ${group}`}
+                            </Text>
+                            <View style={styles.groupBadge}>
+                                <Text style={styles.groupBadgeText}>
+                                    {groupMatches.length}
+                                </Text>
+                            </View>
+                        </View>
+                        {groupMatches.map((match: Match, index: number) => (
+                            <MatchCard
+                                key={match.id || index}
+                                match={match}
+                                onPress={() => {
+                                    console.log('Partido seleccionado:', match.id);
+                                }}
+                            />
+                        ))}
+                    </View>
+                ))}
+            </>
+        );
+    };
+
+    if (matches.length === 0) {
+        return (
+            <View style={styles.tabContent}>
                 <EmptyState
                     message="No hay partidos disponibles"
                     subtitle="Los partidos aparecerán aquí cuando estén programados"
                 />
-            )}
-        </ScrollView>
+            </View>
+        );
+    }
+
+    return (
+        <View style={styles.container}>
+            {/* Header fijo con título y filtros */}
+            <View style={styles.fixedHeader}>
+                <Text style={styles.sectionTitle}>
+                    Partidos del Torneo ({matches.length})
+                </Text>
+
+                {(groups.length > 0 || matches.some(m => isToday(m.fecha))) && (
+                    <Select
+                        options={getFilterOptions()}
+                        value={selectedFilter}
+                        onChange={setSelectedFilter}
+                        placeholder="Seleccionar filtro"
+                        label="Filtrar partidos"
+                    />
+                )}
+            </View>
+
+            {/* Contenido scrolleable */}
+            <ScrollView
+                style={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContentContainer}
+            >
+                {renderMatchesList()}
+            </ScrollView>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    fixedHeader: {
+        backgroundColor: theme.colors.background,
+        paddingHorizontal: theme.spacing.base,
+        paddingTop: theme.spacing.base,
+        paddingBottom: theme.spacing.sm,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
+        ...theme.getCardShadow('sm'),
+    },
+    scrollContent: {
+        flex: 1,
+    },
+    scrollContentContainer: {
+        padding: theme.spacing.base,
     },
     tabContent: {
         padding: theme.spacing.base,
@@ -61,6 +223,37 @@ const styles = StyleSheet.create({
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.primary,
         marginBottom: theme.spacing.base,
+    },
+    groupSection: {
+        marginBottom: theme.spacing.lg,
+    },
+    groupHeaderContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+        borderBottomWidth: 2,
+        borderBottomColor: theme.colors.primary,
+    },
+    groupHeader: {
+        fontSize: theme.typography.fontSize.base,
+        fontWeight: theme.typography.fontWeight.bold,
+        color: theme.colors.primary,
+        marginBottom: theme.spacing.md,
+    },
+    groupBadge: {
+        backgroundColor: theme.colors.primary,
+        borderRadius: theme.borderRadius.round,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.xs,
+        minWidth: 32,
+        alignItems: 'center',
+    },
+    groupBadgeText: {
+        fontSize: theme.typography.fontSize.sm,
+        fontWeight: theme.typography.fontWeight.bold,
+        color: theme.colors.textInverse,
     },
 });
 
