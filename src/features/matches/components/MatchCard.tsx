@@ -1,40 +1,16 @@
 // src/features/matches/components/MatchCard.tsx
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { Match } from '../../../types/tournament';
+import { theme, getMatchStatusColor, getMatchStatusLabel } from '../../../shared/theme';
 
 interface MatchCardProps {
-    match: any;
+    match: Match;
     onPress?: () => void;
 }
 
 const MatchCard: React.FC<MatchCardProps> = ({ match, onPress }) => {
     const Container = onPress ? TouchableOpacity : View;
-
-    const getMatchStatusColor = (estado: string) => {
-        switch (estado) {
-            case 'finalizado':
-                return '#28a745';
-            case 'en_curso':
-                return '#ffc107';
-            case 'programado':
-                return '#6c757d';
-            default:
-                return '#6c757d';
-        }
-    };
-
-    const getMatchStatusLabel = (estado: string) => {
-        switch (estado) {
-            case 'finalizado':
-                return 'Finalizado';
-            case 'en_curso':
-                return 'En Curso';
-            case 'programado':
-                return 'Programado';
-            default:
-                return estado;
-        }
-    };
 
     return (
         <Container
@@ -121,42 +97,38 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onPress }) => {
 
 const styles = StyleSheet.create({
     matchCard: {
-        backgroundColor: 'white',
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 16,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        backgroundColor: theme.colors.backgroundCard,
+        borderRadius: theme.borderRadius.lg,
+        padding: theme.spacing.base,
+        marginBottom: theme.spacing.base,
+        ...theme.getCardShadow('md'),
     },
     matchHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: theme.spacing.base,
     },
     matchDate: {
-        fontSize: 13,
-        color: '#666',
-        fontWeight: '500',
+        fontSize: theme.typography.fontSize.sm + 1,
+        color: theme.colors.textSecondary,
+        fontWeight: theme.typography.fontWeight.medium,
     },
     matchStatus: {
-        paddingHorizontal: 16,
-        paddingVertical: 6,
-        borderRadius: 16,
+        paddingHorizontal: theme.spacing.base,
+        paddingVertical: theme.spacing.xs + 2,
+        borderRadius: theme.borderRadius.xl,
     },
     matchStatusText: {
-        fontSize: 12,
-        color: 'white',
-        fontWeight: 'bold',
+        fontSize: theme.typography.fontSize.sm,
+        color: theme.colors.textInverse,
+        fontWeight: theme.typography.fontWeight.bold,
     },
     teamRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginVertical: 8,
+        marginVertical: theme.spacing.sm,
     },
     teamInfo: {
         flexDirection: 'row',
@@ -167,55 +139,55 @@ const styles = StyleSheet.create({
         width: 50,
         height: 50,
         borderRadius: 25,
-        marginRight: 12,
+        marginRight: theme.spacing.md,
     },
     teamDetails: {
         flex: 1,
     },
     teamName: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333',
+        fontSize: theme.typography.fontSize.base,
+        fontWeight: theme.typography.fontWeight.bold,
+        color: theme.colors.textPrimary,
         marginBottom: 2,
     },
     teamGroup: {
-        fontSize: 13,
-        color: '#666',
+        fontSize: theme.typography.fontSize.sm + 1,
+        color: theme.colors.textSecondary,
     },
     teamScore: {
-        fontSize: 36,
-        fontWeight: 'bold',
-        color: '#1a237e',
-        marginLeft: 16,
+        fontSize: theme.typography.fontSize.huge,
+        fontWeight: theme.typography.fontWeight.bold,
+        color: theme.colors.primary,
+        marginLeft: theme.spacing.base,
     },
     vsText: {
-        fontSize: 14,
-        color: '#999',
-        fontWeight: 'bold',
+        fontSize: theme.typography.fontSize.md,
+        color: theme.colors.textTertiary,
+        fontWeight: theme.typography.fontWeight.bold,
         textAlign: 'center',
-        marginVertical: 4,
+        marginVertical: theme.spacing.xs,
     },
     setsResultContainer: {
-        backgroundColor: '#f8f9fa',
-        borderRadius: 8,
-        padding: 16,
-        marginTop: 16,
+        backgroundColor: theme.colors.gray50,
+        borderRadius: theme.borderRadius.md,
+        padding: theme.spacing.base,
+        marginTop: theme.spacing.base,
     },
     setsResultTitle: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 12,
+        fontSize: theme.typography.fontSize.md,
+        fontWeight: theme.typography.fontWeight.bold,
+        color: theme.colors.textPrimary,
+        marginBottom: theme.spacing.md,
     },
     setsRow: {
         flexDirection: 'row',
         justifyContent: 'space-around',
-        marginBottom: 8,
+        marginBottom: theme.spacing.sm,
     },
     setResult: {
-        fontSize: 13,
-        color: '#666',
-        fontWeight: '500',
+        fontSize: theme.typography.fontSize.sm + 1,
+        color: theme.colors.textSecondary,
+        fontWeight: theme.typography.fontWeight.medium,
     },
 });
 

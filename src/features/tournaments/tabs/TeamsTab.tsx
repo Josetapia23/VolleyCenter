@@ -1,34 +1,17 @@
 // src/features/tournaments/tabs/TeamsTab.tsx
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { Team } from '../../../types/tournament';
-import TournamentService from '../../../services/api';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { TeamCard } from '../../teams/components';
 import { LoadingSpinner, EmptyState } from '../../../shared/components';
+import { useTeams } from '../../../shared/hooks';
+import { theme } from '../../../shared/theme';
 
 interface TeamsTabProps {
     tournamentId: number;
 }
 
 const TeamsTab: React.FC<TeamsTabProps> = ({ tournamentId }) => {
-    const [teams, setTeams] = useState<Team[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        loadTeams();
-    }, []);
-
-    const loadTeams = async () => {
-        try {
-            setLoading(true);
-            const data = await TournamentService.getTournamentTeams(tournamentId);
-            setTeams(data);
-        } catch (error) {
-            console.error('Error loading teams:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { teams, loading } = useTeams({ tournamentId });
 
     if (loading) {
         return <LoadingSpinner message="Cargando equipos..." />;
@@ -63,13 +46,13 @@ const TeamsTab: React.FC<TeamsTabProps> = ({ tournamentId }) => {
 
 const styles = StyleSheet.create({
     tabContent: {
-        padding: 16,
+        padding: theme.spacing.base,
     },
     sectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#1a237e',
-        marginBottom: 16,
+        fontSize: theme.typography.fontSize.lg,
+        fontWeight: theme.typography.fontWeight.bold,
+        color: theme.colors.primary,
+        marginBottom: theme.spacing.base,
     },
 });
 
