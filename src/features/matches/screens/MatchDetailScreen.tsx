@@ -1,9 +1,9 @@
-// src/screens/MatchDetailScreen.tsx
+// src/features/matches/screens/MatchDetailScreen.tsx
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
-import { RootStackParamList } from '../navigation/AppNavigator';
+import { RootStackParamList } from '../../../navigation/AppNavigator';
 
 type MatchDetailScreenNavigationProp = StackNavigationProp<
     RootStackParamList,

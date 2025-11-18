@@ -2,6 +2,7 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Tournament } from '../../../types/tournament';
+import { theme, getStatusColor } from '../../../shared/theme';
 
 interface TournamentCardProps {
     tournament: Tournament;
@@ -16,36 +17,6 @@ const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, onPress }) 
             month: 'short',
             year: 'numeric',
         });
-    };
-
-    const getProgressColor = (estado: string) => {
-        const estadoLower = estado.toLowerCase();
-        switch (estadoLower) {
-            case 'iniciado':
-                return '#ffc107';
-            case 'en ejecución':
-            case 'en ejecucion':
-                return '#28a745';
-            case 'finalizado':
-                return '#6c757d';
-            default:
-                return '#1a237e';
-        }
-    };
-
-    const getStatusColor = (estado: string) => {
-        const estadoLower = estado.toLowerCase();
-        switch (estadoLower) {
-            case 'iniciado':
-                return '#ffc107';
-            case 'en ejecución':
-            case 'en ejecucion':
-                return '#28a745';
-            case 'finalizado':
-                return '#6c757d';
-            default:
-                return '#1a237e';
-        }
     };
 
     return (
@@ -106,7 +77,7 @@ const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, onPress }) 
                                 styles.progressFill,
                                 {
                                     width: `${tournament.progreso}%`,
-                                    backgroundColor: getProgressColor(tournament.estado)
+                                    backgroundColor: getStatusColor(tournament.estado)
                                 }
                             ]}
                         />
@@ -123,121 +94,115 @@ const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, onPress }) 
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: 'white',
-        borderRadius: 12,
-        marginBottom: 20,
-        elevation: 3,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        backgroundColor: theme.colors.backgroundCard,
+        borderRadius: theme.borderRadius.lg,
+        marginBottom: theme.spacing.lg,
+        ...theme.getCardShadow('md'),
         overflow: 'hidden',
     },
     statusContainer: {
         alignItems: 'flex-end',
-        paddingTop: 12,
-        paddingRight: 12,
+        paddingTop: theme.spacing.md,
+        paddingRight: theme.spacing.md,
         paddingBottom: 0,
     },
     statusBadge: {
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 16,
-        elevation: 1,
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.xs + 2,
+        borderRadius: theme.borderRadius.xl,
+        ...theme.getCardShadow('sm'),
     },
     statusText: {
-        fontSize: 11,
-        color: 'white',
-        fontWeight: 'bold',
+        fontSize: theme.typography.fontSize.xs + 1,
+        color: theme.colors.textInverse,
+        fontWeight: theme.typography.fontWeight.bold,
         textTransform: 'uppercase',
     },
     cardHeader: {
         flexDirection: 'row',
-        padding: 16,
-        paddingTop: 8,
+        padding: theme.spacing.base,
+        paddingTop: theme.spacing.sm,
         alignItems: 'center',
     },
     tournamentImage: {
         width: 80,
         height: 80,
-        borderRadius: 8,
-        marginRight: 12,
+        borderRadius: theme.borderRadius.md,
+        marginRight: theme.spacing.md,
     },
     tournamentInfo: {
         flex: 1,
     },
     tournamentName: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 4,
+        fontSize: theme.typography.fontSize.lg,
+        fontWeight: theme.typography.fontWeight.bold,
+        color: theme.colors.textPrimary,
+        marginBottom: theme.spacing.xs,
     },
     category: {
-        fontSize: 14,
-        color: '#1a237e',
-        fontWeight: '600',
+        fontSize: theme.typography.fontSize.md,
+        color: theme.colors.primary,
+        fontWeight: theme.typography.fontWeight.semibold,
         marginBottom: 2,
     },
     location: {
-        fontSize: 12,
-        color: '#666',
+        fontSize: theme.typography.fontSize.sm,
+        color: theme.colors.textSecondary,
     },
     cardContent: {
-        paddingHorizontal: 16,
-        paddingBottom: 16,
+        paddingHorizontal: theme.spacing.base,
+        paddingBottom: theme.spacing.base,
     },
     dateContainer: {
-        marginBottom: 12,
+        marginBottom: theme.spacing.md,
     },
     dateLabel: {
-        fontSize: 12,
-        color: '#999',
-        marginBottom: 4,
+        fontSize: theme.typography.fontSize.sm,
+        color: theme.colors.textTertiary,
+        marginBottom: theme.spacing.xs,
     },
     dateText: {
-        fontSize: 13,
-        color: '#333',
-        fontWeight: '500',
+        fontSize: theme.typography.fontSize.sm + 1,
+        color: theme.colors.textPrimary,
+        fontWeight: theme.typography.fontWeight.medium,
     },
     statsContainer: {
         flexDirection: 'row',
         justifyContent: 'space-around',
-        marginBottom: 12,
-        paddingVertical: 12,
-        backgroundColor: '#f8f9fa',
-        borderRadius: 8,
+        marginBottom: theme.spacing.md,
+        paddingVertical: theme.spacing.md,
+        backgroundColor: theme.colors.gray50,
+        borderRadius: theme.borderRadius.md,
     },
     statItem: {
         alignItems: 'center',
     },
     statNumber: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#1a237e',
+        fontSize: theme.typography.fontSize.xl,
+        fontWeight: theme.typography.fontWeight.bold,
+        color: theme.colors.primary,
     },
     statLabel: {
-        fontSize: 11,
-        color: '#666',
+        fontSize: theme.typography.fontSize.xs + 1,
+        color: theme.colors.textSecondary,
         marginTop: 2,
     },
     progressContainer: {
-        marginBottom: 12,
+        marginBottom: theme.spacing.md,
     },
     progressBar: {
         height: 6,
-        backgroundColor: '#e0e0e0',
-        borderRadius: 3,
+        backgroundColor: theme.colors.gray200,
+        borderRadius: theme.borderRadius.sm - 1,
         overflow: 'hidden',
     },
     progressFill: {
         height: '100%',
-        borderRadius: 3,
+        borderRadius: theme.borderRadius.sm - 1,
     },
     organizer: {
-        fontSize: 12,
-        color: '#999',
+        fontSize: theme.typography.fontSize.sm,
+        color: theme.colors.textTertiary,
         fontStyle: 'italic',
     },
 });
