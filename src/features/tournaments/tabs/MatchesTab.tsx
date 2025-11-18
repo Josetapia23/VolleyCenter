@@ -20,18 +20,15 @@ const MatchesTab: React.FC<MatchesTabProps> = ({ tournamentDetail, loading }) =>
 
     const matches = tournamentDetail.partidos || [];
 
-    // Debug: Ver qué datos vienen en los partidos
-    console.log('Partidos recibidos:', matches.length);
-    if (matches.length > 0) {
-        console.log('Primer partido ejemplo:', JSON.stringify(matches[0], null, 2));
-    }
-
-    // Obtener grupos únicos de los partidos
+    // Obtener grupos únicos de los partidos (del equipo_1)
     const groups = Array.from(
-        new Set(matches.map(match => match.grupo).filter(Boolean))
+        new Set(matches.map(match => match.equipo_1?.grupo).filter(Boolean))
     ).sort() as string[];
 
-    console.log('Grupos encontrados:', groups);
+    // Función auxiliar para obtener el grupo de un partido
+    const getMatchGroup = (match: Match): string | null => {
+        return match.equipo_1?.grupo || match.equipo_2?.grupo || null;
+    };
 
     // Función para verificar si un partido es hoy
     const isToday = (dateString: string) => {
@@ -45,7 +42,7 @@ const MatchesTab: React.FC<MatchesTabProps> = ({ tournamentDetail, loading }) =>
         if (selectedFilter === 'today') {
             return matches.filter(match => isToday(match.fecha));
         } else if (selectedFilter) {
-            return matches.filter(match => match.grupo === selectedFilter);
+            return matches.filter(match => getMatchGroup(match) === selectedFilter);
         }
         return matches;
     };
@@ -54,7 +51,7 @@ const MatchesTab: React.FC<MatchesTabProps> = ({ tournamentDetail, loading }) =>
 
     // Agrupar partidos por grupo
     const matchesByGroup = matches.reduce((acc, match) => {
-        const group = match.grupo || 'Sin Grupo';
+        const group = getMatchGroup(match) || 'Sin Grupo';
         if (!acc[group]) {
             acc[group] = [];
         }
@@ -85,9 +82,9 @@ const MatchesTab: React.FC<MatchesTabProps> = ({ tournamentDetail, loading }) =>
 
         // Agregar grupos
         groups.forEach((group) => {
-            const count = matches.filter(m => m.grupo === group).length;
+            const count = matches.filter(m => getMatchGroup(m) === group).length;
             options.push({
-                label: `Grupo ${group}`,
+                label: `${group}`,
                 value: group,
                 count,
             });
@@ -117,7 +114,7 @@ const MatchesTab: React.FC<MatchesTabProps> = ({ tournamentDetail, loading }) =>
             return (
                 <>
                     <Text style={styles.groupHeader}>
-                        {selectedFilter === 'today' ? '🔴 Partidos de Hoy' : `Grupo ${selectedFilter}`} - {filteredMatches.length} {filteredMatches.length === 1 ? 'partido' : 'partidos'}
+                        {selectedFilter === 'today' ? '🔴 Partidos de Hoy' : `${selectedFilter}`} - {filteredMatches.length} {filteredMatches.length === 1 ? 'partido' : 'partidos'}
                     </Text>
                     {filteredMatches.map((match: Match, index: number) => (
                         <MatchCard
@@ -139,7 +136,7 @@ const MatchesTab: React.FC<MatchesTabProps> = ({ tournamentDetail, loading }) =>
                     <View key={group} style={styles.groupSection}>
                         <View style={styles.groupHeaderContainer}>
                             <Text style={styles.groupHeader}>
-                                {group === 'Sin Grupo' ? group : `Grupo ${group}`}
+                                {group === 'Sin Grupo' ? group : `${group}`}
                             </Text>
                             <View style={styles.groupBadge}>
                                 <Text style={styles.groupBadgeText}>
