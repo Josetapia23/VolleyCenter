@@ -1,10 +1,10 @@
 // src/features/tournaments/tabs/TeamsTab.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Team } from '../../../types/tournament';
 import TournamentService from '../../../services/api';
 import { TeamCard } from '../../teams/components';
-import { LoadingSpinner, EmptyState } from '../../../shared/components';
+import { LoadingSpinner, EmptyState, Select, SelectOption } from '../../../shared/components';
 import { theme } from '../../../shared/theme';
 
 interface TeamsTabProps {
@@ -59,61 +59,27 @@ const TeamsTab: React.FC<TeamsTabProps> = ({ tournamentId }) => {
         return acc;
     }, {} as Record<string, Team[]>);
 
-    const renderGroupFilter = () => {
-        if (groups.length === 0) return null;
+    const getGroupOptions = (): SelectOption[] => {
+        if (groups.length === 0) return [];
 
-        return (
-            <View style={styles.filterContainer}>
-                <Text style={styles.filterLabel}>Filtrar por grupo:</Text>
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.filterChipsContainer}
-                >
-                    {/* Botón "Todos" */}
-                    <TouchableOpacity
-                        style={[
-                            styles.filterChip,
-                            selectedGroup === null && styles.filterChipActive
-                        ]}
-                        onPress={() => setSelectedGroup(null)}
-                    >
-                        <Text
-                            style={[
-                                styles.filterChipText,
-                                selectedGroup === null && styles.filterChipTextActive
-                            ]}
-                        >
-                            Todos ({teams.length})
-                        </Text>
-                    </TouchableOpacity>
+        const options: SelectOption[] = [
+            {
+                label: `Todos los grupos (${teams.length})`,
+                value: null,
+                count: teams.length,
+            },
+        ];
 
-                    {/* Botones por cada grupo */}
-                    {groups.map((group) => {
-                        const count = teams.filter(t => t.grupo === group).length;
-                        return (
-                            <TouchableOpacity
-                                key={group}
-                                style={[
-                                    styles.filterChip,
-                                    selectedGroup === group && styles.filterChipActive
-                                ]}
-                                onPress={() => setSelectedGroup(group)}
-                            >
-                                <Text
-                                    style={[
-                                        styles.filterChipText,
-                                        selectedGroup === group && styles.filterChipTextActive
-                                    ]}
-                                >
-                                    Grupo {group} ({count})
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </ScrollView>
-            </View>
-        );
+        groups.forEach((group) => {
+            const count = teams.filter(t => t.grupo === group).length;
+            options.push({
+                label: `Grupo ${group}`,
+                value: group,
+                count,
+            });
+        });
+
+        return options;
     };
 
     const renderTeamsList = () => {
@@ -194,7 +160,16 @@ const TeamsTab: React.FC<TeamsTabProps> = ({ tournamentId }) => {
                 <Text style={styles.sectionTitle}>
                     Equipos Participantes ({teams.length})
                 </Text>
-                {renderGroupFilter()}
+
+                {groups.length > 0 && (
+                    <Select
+                        options={getGroupOptions()}
+                        value={selectedGroup}
+                        onChange={setSelectedGroup}
+                        placeholder="Seleccionar grupo"
+                        label="Filtrar por grupo"
+                    />
+                )}
             </View>
 
             {/* Contenido scrolleable */}
@@ -235,40 +210,7 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.lg,
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.primary,
-        marginBottom: theme.spacing.sm,
-    },
-    filterContainer: {
-        marginBottom: 0,
-    },
-    filterLabel: {
-        fontSize: theme.typography.fontSize.md,
-        fontWeight: theme.typography.fontWeight.semibold,
-        color: theme.colors.textPrimary,
-        marginBottom: theme.spacing.sm,
-    },
-    filterChipsContainer: {
-        paddingRight: theme.spacing.base,
-    },
-    filterChip: {
-        paddingHorizontal: theme.spacing.base,
-        paddingVertical: theme.spacing.sm,
-        borderRadius: theme.borderRadius.round,
-        backgroundColor: theme.colors.gray100,
-        marginRight: theme.spacing.sm,
-        borderWidth: 2,
-        borderColor: theme.colors.gray200,
-    },
-    filterChipActive: {
-        backgroundColor: theme.colors.primary,
-        borderColor: theme.colors.primary,
-    },
-    filterChipText: {
-        fontSize: theme.typography.fontSize.sm,
-        fontWeight: theme.typography.fontWeight.semibold,
-        color: theme.colors.textSecondary,
-    },
-    filterChipTextActive: {
-        color: theme.colors.textInverse,
+        marginBottom: theme.spacing.base,
     },
     groupSection: {
         marginBottom: theme.spacing.lg,
