@@ -1,107 +1,186 @@
-// src/features/tournaments/tabs/TeamsTab.tsx
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { Team } from '../../../types/tournament';
-import TournamentService from '../../../services/api';
-import { TeamCard } from '../../teams/components';
+// src/features/tournaments/tabs/InfoTab.tsx
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { Tournament } from '../../../types/tournament';
+import { theme } from '../../../shared/theme';
 
-interface TeamsTabProps {
-    tournamentId: number;
+interface InfoTabProps {
+    tournament: Tournament;
 }
 
-const TeamsTab: React.FC<TeamsTabProps> = ({ tournamentId }) => {
-    const [teams, setTeams] = useState<Team[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        loadTeams();
-    }, []);
-
-    const loadTeams = async () => {
-        try {
-            setLoading(true);
-            const data = await TournamentService.getTournamentTeams(tournamentId);
-            setTeams(data);
-        } catch (error) {
-            console.error('Error loading teams:', error);
-        } finally {
-            setLoading(false);
-        }
+const InfoTab: React.FC<InfoTabProps> = ({ tournament }) => {
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('es-ES', {
+            weekday: 'long',
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric',
+        });
     };
-
-    if (loading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#1a237e" />
-                <Text style={styles.loadingText}>Cargando equipos...</Text>
-            </View>
-        );
-    }
 
     return (
         <View style={styles.tabContent}>
-            <Text style={styles.sectionTitle}>
-                Equipos Participantes ({teams.length})
-            </Text>
+            <View style={styles.infoSection}>
+                <Text style={styles.sectionTitle}>Información General</Text>
 
-            {teams.length > 0 ? (
-                teams.map((team) => (
-                    <TeamCard
-                        key={team.id}
-                        team={team}
-                        onPress={() => {
-                            // TODO: Navegar al detalle del equipo
-                            console.log('Equipo seleccionado:', team.nombre);
-                        }}
-                    />
-                ))
-            ) : (
-                <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>No hay equipos registrados</Text>
+                <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Categoría:</Text>
+                    <Text style={styles.infoValue}>{tournament.categoria}</Text>
                 </View>
-            )}
+
+                <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Ubicación:</Text>
+                    <Text style={styles.infoValue}>
+                        {tournament.municipio}, {tournament.departamento}
+                    </Text>
+                </View>
+
+                <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Organizador:</Text>
+                    <Text style={styles.infoValue}>{tournament.organizador}</Text>
+                </View>
+
+                <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Fecha de inicio:</Text>
+                    <Text style={styles.infoValue}>{formatDate(tournament.fecha_inicio)}</Text>
+                </View>
+
+                <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Fecha de fin:</Text>
+                    <Text style={styles.infoValue}>{formatDate(tournament.fecha_fin)}</Text>
+                </View>
+
+                <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Estado:</Text>
+                    <Text style={[styles.infoValue, styles.statusActive]}>
+                        {tournament.estado}
+                    </Text>
+                </View>
+            </View>
+
+            <View style={styles.statsSection}>
+                <Text style={styles.sectionTitle}>Estadísticas</Text>
+
+                <View style={styles.statsGrid}>
+                    <View style={styles.statCard}>
+                        <Text style={styles.statNumber}>{tournament.total_equipos}</Text>
+                        <Text style={styles.statLabel}>Equipos Participantes</Text>
+                    </View>
+
+                    <View style={styles.statCard}>
+                        <Text style={styles.statNumber}>{tournament.total_partidos}</Text>
+                        <Text style={styles.statLabel}>Total Partidos</Text>
+                    </View>
+
+                    <View style={styles.statCard}>
+                        <Text style={styles.statNumber}>{tournament.partidos_jugados}</Text>
+                        <Text style={styles.statLabel}>Partidos Jugados</Text>
+                    </View>
+
+                    <View style={styles.statCard}>
+                        <Text style={styles.statNumber}>{tournament.progreso}%</Text>
+                        <Text style={styles.statLabel}>Progreso</Text>
+                    </View>
+                </View>
+
+                <View style={styles.progressContainer}>
+                    <Text style={styles.progressLabel}>Progreso del torneo</Text>
+                    <View style={styles.progressBar}>
+                        <View style={[styles.progressFill, { width: `${tournament.progreso}%` }]} />
+                    </View>
+                </View>
+            </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     tabContent: {
-        padding: 16,
+        padding: theme.spacing.base,
+    },
+    infoSection: {
+        backgroundColor: theme.colors.backgroundCard,
+        borderRadius: theme.borderRadius.lg,
+        padding: theme.spacing.base,
+        marginBottom: theme.spacing.base,
+        ...theme.getCardShadow('md'),
     },
     sectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#1a237e',
-        marginBottom: 16,
+        fontSize: theme.typography.fontSize.lg,
+        fontWeight: theme.typography.fontWeight.bold,
+        color: theme.colors.primary,
+        marginBottom: theme.spacing.base,
     },
-    loadingContainer: {
+    infoRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingVertical: theme.spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
+    },
+    infoLabel: {
+        fontSize: theme.typography.fontSize.md,
+        color: theme.colors.textSecondary,
+        fontWeight: theme.typography.fontWeight.medium,
+    },
+    infoValue: {
+        fontSize: theme.typography.fontSize.md,
+        color: theme.colors.textPrimary,
+        fontWeight: theme.typography.fontWeight.semibold,
+        textAlign: 'right',
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 32,
+        marginLeft: theme.spacing.base,
     },
-    loadingText: {
-        marginTop: 16,
-        fontSize: 16,
-        color: '#666',
+    statusActive: {
+        color: theme.colors.success,
     },
-    emptyContainer: {
-        backgroundColor: 'white',
-        borderRadius: 12,
-        padding: 32,
-        alignItems: 'center',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+    statsSection: {
+        backgroundColor: theme.colors.backgroundCard,
+        borderRadius: theme.borderRadius.lg,
+        padding: theme.spacing.base,
+        ...theme.getCardShadow('md'),
     },
-    emptyText: {
-        fontSize: 16,
-        color: '#999',
+    statsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginHorizontal: -theme.spacing.sm,
+    },
+    statCard: {
+        width: '50%',
+        padding: theme.spacing.sm,
+    },
+    statNumber: {
+        fontSize: theme.typography.fontSize.xxxl,
+        fontWeight: theme.typography.fontWeight.bold,
+        color: theme.colors.primary,
         textAlign: 'center',
-        fontStyle: 'italic',
+    },
+    statLabel: {
+        fontSize: theme.typography.fontSize.sm,
+        color: theme.colors.textSecondary,
+        textAlign: 'center',
+        marginTop: theme.spacing.xs,
+    },
+    progressContainer: {
+        marginTop: theme.spacing.base,
+    },
+    progressLabel: {
+        fontSize: theme.typography.fontSize.md,
+        color: theme.colors.textSecondary,
+        marginBottom: theme.spacing.sm,
+    },
+    progressBar: {
+        height: 8,
+        backgroundColor: theme.colors.gray200,
+        borderRadius: theme.borderRadius.sm,
+        overflow: 'hidden',
+    },
+    progressFill: {
+        height: '100%',
+        backgroundColor: theme.colors.primary,
+        borderRadius: theme.borderRadius.sm,
     },
 });
 
-export default TeamsTab;
+export default InfoTab;
