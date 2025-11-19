@@ -272,15 +272,13 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.gray100,
         borderBottomWidth: 2,
         borderBottomColor: theme.colors.primary,
-        height: 44,
-        alignItems: 'center',
+        minHeight: 44,
     },
     tableDataRow: {
         flexDirection: 'row',
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.border,
-        height: 52,
-        alignItems: 'center',
+        minHeight: 52,
     },
     tableRowEven: {
         backgroundColor: theme.colors.gray50,
@@ -294,11 +292,13 @@ const styles = StyleSheet.create({
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.textPrimary,
         textAlign: 'center',
+        paddingVertical: theme.spacing.sm + 2,
     },
     dataCell: {
         fontSize: theme.typography.fontSize.sm,
         color: theme.colors.textPrimary,
         textAlign: 'center',
+        paddingVertical: theme.spacing.md,
     },
     posHeader: {
         width: 48,
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
         width: 56,
     },
     ptsHeader: {
-        width: 64,
+        width: 70,
         backgroundColor: theme.colors.success + '15',
     },
     posData: {
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
         width: 56,
     },
     ptsData: {
-        width: 64,
+        width: 70,
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.success,
         fontSize: theme.typography.fontSize.base,
