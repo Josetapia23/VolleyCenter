@@ -78,75 +78,67 @@ const StandingsTab: React.FC = () => {
         return options;
     };
 
-    const renderTableHeader = () => (
-        <View style={styles.tableHeaderRow}>
-            <View style={styles.stickyColumn}>
-                <Text style={[styles.headerCell, styles.posHeader]}>Pos</Text>
-                <Text style={[styles.headerCell, styles.teamHeader]}>Equipo</Text>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollableColumns}>
-                <View style={styles.statsRow}>
-                    <Text style={[styles.headerCell, styles.statHeader]}>PJ</Text>
-                    <Text style={[styles.headerCell, styles.statHeader]}>PG</Text>
-                    <Text style={[styles.headerCell, styles.statHeader]}>PP</Text>
-                    <Text style={[styles.headerCell, styles.statHeader]}>SF</Text>
-                    <Text style={[styles.headerCell, styles.statHeader]}>SC</Text>
-                    <Text style={[styles.headerCell, styles.statHeader]}>Dif</Text>
-                    <Text style={[styles.headerCell, styles.ptsHeader]}>Pts</Text>
-                </View>
-            </ScrollView>
-        </View>
-    );
-
-    const renderTableRow = (standing: typeof MOCK_STANDINGS[0], index: number) => (
-        <View
-            key={`${standing.grupo}-${standing.equipo}`}
-            style={[
-                styles.tableDataRow,
-                index % 2 === 0 && styles.tableRowEven,
-                standing.pos <= 4 && styles.tableRowQualified,
-            ]}
-        >
-            <View style={styles.stickyColumn}>
-                <Text style={[styles.dataCell, styles.posData]}>{standing.pos}</Text>
-                <Text style={[styles.dataCell, styles.teamData]} numberOfLines={1}>
-                    {standing.equipo}
-                </Text>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollableColumns}>
-                <View style={styles.statsRow}>
-                    <Text style={[styles.dataCell, styles.statData]}>{standing.pj}</Text>
-                    <Text style={[styles.dataCell, styles.statData]}>{standing.pg}</Text>
-                    <Text style={[styles.dataCell, styles.statData]}>{standing.pp}</Text>
-                    <Text style={[styles.dataCell, styles.statData]}>{standing.sf}</Text>
-                    <Text style={[styles.dataCell, styles.statData]}>{standing.sc}</Text>
-                    <Text style={[styles.dataCell, styles.statData]}>{standing.sf - standing.sc}</Text>
-                    <Text style={[styles.dataCell, styles.ptsData]}>{standing.pts}</Text>
-                </View>
-            </ScrollView>
-        </View>
-    );
-
     const renderStandings = () => {
+        const renderGroupTable = (group: string, standings: typeof MOCK_STANDINGS) => (
+            <View key={group} style={styles.tableContainer}>
+                <Text style={styles.groupTitle}>{group}</Text>
+
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={true}
+                    style={styles.horizontalScroll}
+                >
+                    <View>
+                        {/* Header */}
+                        <View style={styles.tableHeaderRow}>
+                            <Text style={[styles.headerCell, styles.posHeader]}>Pos</Text>
+                            <Text style={[styles.headerCell, styles.teamHeader]}>Equipo</Text>
+                            <Text style={[styles.headerCell, styles.statHeader]}>PJ</Text>
+                            <Text style={[styles.headerCell, styles.statHeader]}>PG</Text>
+                            <Text style={[styles.headerCell, styles.statHeader]}>PP</Text>
+                            <Text style={[styles.headerCell, styles.statHeader]}>SF</Text>
+                            <Text style={[styles.headerCell, styles.statHeader]}>SC</Text>
+                            <Text style={[styles.headerCell, styles.statHeader]}>Dif</Text>
+                            <Text style={[styles.headerCell, styles.ptsHeader]}>Pts</Text>
+                        </View>
+
+                        {/* Filas */}
+                        {standings.map((standing, index) => (
+                            <View
+                                key={standing.equipo}
+                                style={[
+                                    styles.tableDataRow,
+                                    index % 2 === 0 && styles.tableRowEven,
+                                    standing.pos <= 4 && styles.tableRowQualified,
+                                ]}
+                            >
+                                <Text style={[styles.dataCell, styles.posData]}>{standing.pos}</Text>
+                                <Text style={[styles.dataCell, styles.teamData]} numberOfLines={1}>
+                                    {standing.equipo}
+                                </Text>
+                                <Text style={[styles.dataCell, styles.statData]}>{standing.pj}</Text>
+                                <Text style={[styles.dataCell, styles.statData]}>{standing.pg}</Text>
+                                <Text style={[styles.dataCell, styles.statData]}>{standing.pp}</Text>
+                                <Text style={[styles.dataCell, styles.statData]}>{standing.sf}</Text>
+                                <Text style={[styles.dataCell, styles.statData]}>{standing.sc}</Text>
+                                <Text style={[styles.dataCell, styles.statData]}>{standing.sf - standing.sc}</Text>
+                                <Text style={[styles.dataCell, styles.ptsData]}>{standing.pts}</Text>
+                            </View>
+                        ))}
+                    </View>
+                </ScrollView>
+            </View>
+        );
+
         if (selectedGroup) {
             // Vista filtrada por grupo
-            return (
-                <View style={styles.tableContainer}>
-                    <Text style={styles.groupTitle}>{selectedGroup}</Text>
-                    {renderTableHeader()}
-                    {filteredStandings.map((standing, index) => renderTableRow(standing, index))}
-                </View>
-            );
+            return renderGroupTable(selectedGroup, filteredStandings);
         }
 
         // Vista agrupada
-        return Object.entries(standingsByGroup).map(([group, standings]) => (
-            <View key={group} style={styles.tableContainer}>
-                <Text style={styles.groupTitle}>{group}</Text>
-                {renderTableHeader()}
-                {standings.map((standing, index) => renderTableRow(standing, index))}
-            </View>
-        ));
+        return Object.entries(standingsByGroup).map(([group, standings]) =>
+            renderGroupTable(group, standings)
+        );
     };
 
     return (
@@ -272,6 +264,9 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.primary,
         padding: theme.spacing.md,
     },
+    horizontalScroll: {
+        width: '100%',
+    },
     tableHeaderRow: {
         flexDirection: 'row',
         backgroundColor: theme.colors.gray100,
@@ -291,20 +286,6 @@ const styles = StyleSheet.create({
     tableRowQualified: {
         borderLeftWidth: 4,
         borderLeftColor: theme.colors.success,
-    },
-    stickyColumn: {
-        flexDirection: 'row',
-        backgroundColor: theme.colors.backgroundCard,
-        borderRightWidth: 2,
-        borderRightColor: theme.colors.primary,
-        zIndex: 1,
-    },
-    scrollableColumns: {
-        flex: 1,
-    },
-    statsRow: {
-        flexDirection: 'row',
-        paddingRight: theme.spacing.base,
     },
     headerCell: {
         fontSize: theme.typography.fontSize.xs,
