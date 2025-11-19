@@ -113,7 +113,7 @@ const StandingsTab: React.FC = () => {
                                 ]}
                             >
                                 <Text style={[styles.dataCell, styles.posData]}>{standing.pos}</Text>
-                                <Text style={[styles.dataCell, styles.teamData]} numberOfLines={1}>
+                                <Text style={[styles.dataCell, styles.teamData]} numberOfLines={1} ellipsizeMode="tail">
                                     {standing.equipo}
                                 </Text>
                                 <Text style={[styles.dataCell, styles.statData]}>{standing.pj}</Text>
@@ -307,6 +307,7 @@ const styles = StyleSheet.create({
         width: 140,
         textAlign: 'left',
         paddingLeft: theme.spacing.sm,
+        overflow: 'hidden',
     },
     statHeader: {
         width: 56,
@@ -326,6 +327,7 @@ const styles = StyleSheet.create({
         textAlign: 'left',
         paddingLeft: theme.spacing.sm,
         fontWeight: theme.typography.fontWeight.semibold,
+        overflow: 'hidden',
     },
     statData: {
         width: 56,
