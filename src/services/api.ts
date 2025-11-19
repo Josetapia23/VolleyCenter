@@ -48,7 +48,7 @@ class TournamentService {
   // Obtener equipos de un torneo
   static async getTournamentTeams(id: number): Promise<Team[]> {
     try {
-      const response = await api.get<ApiResponse<Team[]>>(`/v1/tournaments/teams.php?id=${id}`);
+      const response = await api.get<ApiResponse<Team[]>>(`/v1/tournaments/${id}/teams`);
       return response.data.data;
     } catch (error) {
       console.error('Error fetching tournament teams:', error);
