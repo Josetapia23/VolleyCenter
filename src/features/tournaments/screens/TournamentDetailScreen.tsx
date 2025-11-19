@@ -82,7 +82,7 @@ const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
             case 'standings':
                 return <StandingsTab />;
             case 'matches':
-                return <MatchesTab tournamentId={tournament.id} />;
+                return <MatchesTab tournamentDetail={tournamentDetail} loading={loading} />;
             default:
                 return <InfoTab tournament={tournament} />;
         }

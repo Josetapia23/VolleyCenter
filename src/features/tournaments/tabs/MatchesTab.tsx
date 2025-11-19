@@ -1,40 +1,24 @@
 // src/features/tournaments/tabs/MatchesTab.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Match } from '../../../types/tournament';
+import { TournamentDetail, Match } from '../../../types/tournament';
 import { MatchCard } from '../../matches/components';
 import { LoadingSpinner, EmptyState, Select, SelectOption } from '../../../shared/components';
 import { theme } from '../../../shared/theme';
-import TournamentService from '../../../services/api';
 
 interface MatchesTabProps {
-    tournamentId: number;
+    tournamentDetail: TournamentDetail | null;
+    loading: boolean;
 }
 
-const MatchesTab: React.FC<MatchesTabProps> = ({ tournamentId }) => {
-    const [matches, setMatches] = useState<Match[]>([]);
-    const [loading, setLoading] = useState(true);
+const MatchesTab: React.FC<MatchesTabProps> = ({ tournamentDetail, loading }) => {
     const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
-    useEffect(() => {
-        loadMatches();
-    }, []);
-
-    const loadMatches = async () => {
-        try {
-            setLoading(true);
-            const data = await TournamentService.getTournamentMatches(tournamentId);
-            setMatches(data);
-        } catch (error) {
-            console.error('Error loading matches:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    if (loading) {
+    if (loading || !tournamentDetail) {
         return <LoadingSpinner message="Cargando partidos..." />;
     }
+
+    const matches = tournamentDetail.partidos || [];
 
     // Obtener grupos únicos de los partidos (del equipo_1)
     const groups = Array.from(
