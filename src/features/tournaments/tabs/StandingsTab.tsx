@@ -183,13 +183,16 @@ const StandingsTab: React.FC = () => {
                     </TouchableOpacity>
                 </View>
 
-                <Select
-                    options={getGroupOptions()}
-                    value={selectedGroup}
-                    onChange={setSelectedGroup}
-                    placeholder="Seleccionar grupo"
-                    label="Filtrar por grupo"
-                />
+                {/* Filtro de grupos - Solo visible en vista de Tabla de Posiciones */}
+                {activeView === 'standings' && (
+                    <Select
+                        options={getGroupOptions()}
+                        value={selectedGroup}
+                        onChange={setSelectedGroup}
+                        placeholder="Seleccionar grupo"
+                        label="Filtrar por grupo"
+                    />
+                )}
             </View>
 
             {/* Tabla scrolleable */}
