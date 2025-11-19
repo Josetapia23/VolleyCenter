@@ -5,3 +5,4 @@ export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as EmptyState } from './EmptyState';
 export { default as Select } from './Select';
 export type { SelectOption } from './Select';
+export { default as CreateTournamentModal } from './CreateTournamentModal';

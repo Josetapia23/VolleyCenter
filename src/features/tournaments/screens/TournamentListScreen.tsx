@@ -7,13 +7,14 @@ import {
     StyleSheet,
     RefreshControl,
     Alert,
+    TouchableOpacity,
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../../navigation/AppNavigator';
 import { Tournament } from '../../../types/tournament';
 import TournamentService from '../../../services/api';
 import { TournamentCard } from '../components';
-import { LoadingSpinner, EmptyState } from '../../../shared/components';
+import { LoadingSpinner, EmptyState, CreateTournamentModal } from '../../../shared/components';
 import { theme } from '../../../shared/theme';
 
 type TournamentListScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
@@ -26,6 +27,7 @@ const TournamentListScreen: React.FC<Props> = ({ navigation }) => {
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [showCreateModal, setShowCreateModal] = useState(true); // Se muestra al abrir la app
 
     useEffect(() => {
         loadTournaments();
@@ -59,6 +61,15 @@ const TournamentListScreen: React.FC<Props> = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
+            {/* Botón flotante para abrir modal */}
+            <TouchableOpacity
+                style={styles.floatingButton}
+                onPress={() => setShowCreateModal(true)}
+                activeOpacity={0.8}
+            >
+                <Text style={styles.floatingButtonIcon}>✨</Text>
+            </TouchableOpacity>
+
             <ScrollView
                 style={styles.content}
                 showsVerticalScrollIndicator={false}
@@ -84,6 +95,12 @@ const TournamentListScreen: React.FC<Props> = ({ navigation }) => {
                     />
                 )}
             </ScrollView>
+
+            {/* Modal de crear torneo */}
+            <CreateTournamentModal
+                visible={showCreateModal}
+                onClose={() => setShowCreateModal(false)}
+            />
         </View>
     );
 };
@@ -104,6 +121,22 @@ const styles = StyleSheet.create({
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.primary,
         marginBottom: theme.spacing.base,
+    },
+    floatingButton: {
+        position: 'absolute',
+        top: theme.spacing.base,
+        right: theme.spacing.base,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: theme.colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 100,
+        ...theme.getCardShadow('lg'),
+    },
+    floatingButtonIcon: {
+        fontSize: 28,
     },
 });
 
