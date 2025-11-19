@@ -31,6 +31,7 @@ const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     const [tournamentDetail, setTournamentDetail] = useState<TournamentDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<TabKey>('info');
+    const [tabTransitioning, setTabTransitioning] = useState(false);
 
     const tabs: Tab[] = [
         { key: 'info', title: 'Información' },
@@ -61,7 +62,15 @@ const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     };
 
     const handleTabPress = (tabKey: string) => {
-        setActiveTab(tabKey as TabKey);
+        if (tabKey === activeTab) return; // No hacer nada si ya está en la tab activa
+
+        setTabTransitioning(true);
+
+        // Pequeño delay para mostrar el indicador de carga antes de cambiar
+        setTimeout(() => {
+            setActiveTab(tabKey as TabKey);
+            setTabTransitioning(false);
+        }, 100);
     };
 
     const renderTabContent = () => {
@@ -116,7 +125,27 @@ const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
             <ScrollableTabs tabs={tabs} activeTab={activeTab} onTabPress={handleTabPress} />
 
             <View style={styles.content}>
-                {renderTabContent()}
+                {tabTransitioning ? (
+                    <View style={styles.transitionLoader}>
+                        <View style={styles.loaderContainer}>
+                            <View style={styles.loaderBackground}>
+                                <View style={styles.loaderContent}>
+                                    <View style={styles.spinnerWrapper}>
+                                        {/* Spinner animado con puntos */}
+                                        <View style={styles.dotsContainer}>
+                                            <View style={[styles.dot, styles.dot1]} />
+                                            <View style={[styles.dot, styles.dot2]} />
+                                            <View style={[styles.dot, styles.dot3]} />
+                                        </View>
+                                    </View>
+                                    <Text style={styles.loaderText}>Cargando...</Text>
+                                </View>
+                            </View>
+                        </View>
+                    </View>
+                ) : (
+                    renderTabContent()
+                )}
             </View>
         </View>
     );
@@ -129,6 +158,53 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
+    },
+    transitionLoader: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: theme.colors.background,
+    },
+    loaderContainer: {
+        alignItems: 'center',
+    },
+    loaderBackground: {
+        backgroundColor: theme.colors.backgroundCard,
+        borderRadius: theme.borderRadius.lg,
+        padding: theme.spacing.xl,
+        ...theme.getCardShadow('md'),
+    },
+    loaderContent: {
+        alignItems: 'center',
+    },
+    spinnerWrapper: {
+        marginBottom: theme.spacing.md,
+    },
+    dotsContainer: {
+        flexDirection: 'row',
+        gap: theme.spacing.sm,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    dot: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        backgroundColor: theme.colors.primary,
+    },
+    dot1: {
+        opacity: 0.4,
+    },
+    dot2: {
+        opacity: 0.7,
+    },
+    dot3: {
+        opacity: 1,
+    },
+    loaderText: {
+        fontSize: theme.typography.fontSize.md,
+        color: theme.colors.textSecondary,
+        fontWeight: theme.typography.fontWeight.medium,
     },
     header: {
         height: 120,
