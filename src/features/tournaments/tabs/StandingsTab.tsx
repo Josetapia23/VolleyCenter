@@ -186,6 +186,10 @@ const StandingsTab: React.FC = () => {
                             <View style={[styles.legendColor, styles.qualifiedColor]} />
                             <Text style={styles.legendText}>Clasifican a Playoffs (Top 4)</Text>
                         </View>
+                        <View style={styles.legendItem}>
+                            <View style={[styles.legendColor, styles.notQualifiedColor]} />
+                            <Text style={styles.legendText}>Fuera de clasificación</Text>
+                        </View>
                     </View>
                     <Text style={styles.legendNote}>
                         PJ: Partidos Jugados | PG: Ganados | PP: Perdidos | SF: Sets Favor | SC: Sets Contra | Dif: Diferencia de Sets | Pts: Puntos
@@ -273,18 +277,21 @@ const styles = StyleSheet.create({
         borderBottomWidth: 2,
         borderBottomColor: theme.colors.primary,
         minHeight: 44,
+        borderLeftWidth: 4,
+        borderLeftColor: theme.colors.primary,
     },
     tableDataRow: {
         flexDirection: 'row',
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.border,
         minHeight: 52,
+        borderLeftWidth: 4,
+        borderLeftColor: theme.colors.error,
     },
     tableRowEven: {
         backgroundColor: theme.colors.gray50,
     },
     tableRowQualified: {
-        borderLeftWidth: 4,
         borderLeftColor: theme.colors.success,
     },
     headerCell: {
@@ -368,6 +375,9 @@ const styles = StyleSheet.create({
     },
     qualifiedColor: {
         backgroundColor: theme.colors.success,
+    },
+    notQualifiedColor: {
+        backgroundColor: theme.colors.error,
     },
     legendText: {
         fontSize: theme.typography.fontSize.sm,
