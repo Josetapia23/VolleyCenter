@@ -30,14 +30,14 @@ const TournamentDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     const { tournament } = route.params;
     const [tournamentDetail, setTournamentDetail] = useState<TournamentDetail | null>(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<TabKey>('info');
+    const [activeTab, setActiveTab] = useState<TabKey>('standings');
     const [tabTransitioning, setTabTransitioning] = useState(false);
 
     const tabs: Tab[] = [
-        { key: 'info', title: 'Información' },
-        { key: 'teams', title: 'Equipos' },
         { key: 'standings', title: 'Posiciones' },
         { key: 'matches', title: 'Partidos' },
+        { key: 'teams', title: 'Equipos' },
+        { key: 'info', title: 'Información' },
     ];
 
     useEffect(() => {
