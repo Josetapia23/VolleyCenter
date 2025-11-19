@@ -33,6 +33,7 @@ const MOCK_STANDINGS = [
 
 const StandingsTab: React.FC = () => {
     const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+    const [activeView, setActiveView] = useState<'standings' | 'playoffs'>('standings');
 
     // Obtener grupos únicos
     const groups = Array.from(new Set(MOCK_STANDINGS.map(s => s.grupo))).sort();
@@ -145,7 +146,42 @@ const StandingsTab: React.FC = () => {
         <View style={styles.container}>
             {/* Header fijo */}
             <View style={styles.fixedHeader}>
-                <Text style={styles.sectionTitle}>Tabla de Posiciones</Text>
+                {/* Toggle entre Tabla de Posiciones y Playoffs */}
+                <View style={styles.viewToggleContainer}>
+                    <TouchableOpacity
+                        style={[
+                            styles.viewToggleButton,
+                            styles.viewToggleButtonLeft,
+                            activeView === 'standings' && styles.viewToggleButtonActive,
+                        ]}
+                        onPress={() => setActiveView('standings')}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={[
+                            styles.viewToggleText,
+                            activeView === 'standings' && styles.viewToggleTextActive,
+                        ]}>
+                            Tabla de Posiciones
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[
+                            styles.viewToggleButton,
+                            styles.viewToggleButtonRight,
+                            activeView === 'playoffs' && styles.viewToggleButtonActive,
+                        ]}
+                        onPress={() => setActiveView('playoffs')}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={[
+                            styles.viewToggleText,
+                            activeView === 'playoffs' && styles.viewToggleTextActive,
+                        ]}>
+                            🏆 Playoffs
+                        </Text>
+                    </TouchableOpacity>
+                </View>
 
                 <Select
                     options={getGroupOptions()}
@@ -154,20 +190,6 @@ const StandingsTab: React.FC = () => {
                     placeholder="Seleccionar grupo"
                     label="Filtrar por grupo"
                 />
-
-                {/* Botón de Playoffs (para futuro) */}
-                <TouchableOpacity
-                    style={styles.playoffsButton}
-                    activeOpacity={0.7}
-                    onPress={() => {
-                        // TODO: Implementar vista de playoffs
-                        console.log('Ver playoffs');
-                    }}
-                >
-                    <Text style={styles.playoffsIcon}>🏆</Text>
-                    <Text style={styles.playoffsText}>Ver Playoffs</Text>
-                    <Text style={styles.playoffsArrow}>→</Text>
-                </TouchableOpacity>
             </View>
 
             {/* Tabla scrolleable */}
@@ -176,10 +198,12 @@ const StandingsTab: React.FC = () => {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContentContainer}
             >
-                {renderStandings()}
+                {activeView === 'standings' ? (
+                    <>
+                        {renderStandings()}
 
-                {/* Leyenda */}
-                <View style={styles.legend}>
+                        {/* Leyenda */}
+                        <View style={styles.legend}>
                     <Text style={styles.legendTitle}>Leyenda:</Text>
                     <View style={styles.legendRow}>
                         <View style={styles.legendItem}>
@@ -198,6 +222,17 @@ const StandingsTab: React.FC = () => {
                         💡 Desliza horizontalmente para ver todas las estadísticas
                     </Text>
                 </View>
+                    </>
+                ) : (
+                    // TODO: Vista de Playoffs - Estará lista pronto
+                    <View style={styles.comingSoonContainer}>
+                        <Text style={styles.comingSoonIcon}>🏆</Text>
+                        <Text style={styles.comingSoonTitle}>Playoffs</Text>
+                        <Text style={styles.comingSoonText}>
+                            Esta sección estará disponible próximamente
+                        </Text>
+                    </View>
+                )}
             </ScrollView>
         </View>
     );
@@ -216,37 +251,40 @@ const styles = StyleSheet.create({
         borderBottomColor: theme.colors.border,
         ...theme.getCardShadow('sm'),
     },
-    sectionTitle: {
-        fontSize: theme.typography.fontSize.lg,
-        fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.primary,
-        marginBottom: theme.spacing.base,
-    },
-    playoffsButton: {
+    viewToggleContainer: {
         flexDirection: 'row',
+        marginBottom: theme.spacing.base,
+        borderRadius: theme.borderRadius.lg,
+        borderWidth: 2,
+        borderColor: theme.colors.primary,
+        overflow: 'hidden',
+    },
+    viewToggleButton: {
+        flex: 1,
+        paddingVertical: theme.spacing.md,
+        paddingHorizontal: theme.spacing.sm,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: theme.colors.success,
-        paddingVertical: theme.spacing.md,
-        paddingHorizontal: theme.spacing.lg,
-        borderRadius: theme.borderRadius.lg,
-        marginTop: theme.spacing.base,
-        ...theme.getCardShadow('md'),
+        backgroundColor: theme.colors.background,
     },
-    playoffsIcon: {
-        fontSize: 24,
-        marginRight: theme.spacing.sm,
+    viewToggleButtonLeft: {
+        borderRightWidth: 1,
+        borderRightColor: theme.colors.primary,
     },
-    playoffsText: {
-        fontSize: theme.typography.fontSize.base,
-        fontWeight: theme.typography.fontWeight.bold,
+    viewToggleButtonRight: {
+        borderLeftWidth: 1,
+        borderLeftColor: theme.colors.primary,
+    },
+    viewToggleButtonActive: {
+        backgroundColor: theme.colors.primary,
+    },
+    viewToggleText: {
+        fontSize: theme.typography.fontSize.sm,
+        fontWeight: theme.typography.fontWeight.semibold,
+        color: theme.colors.primary,
+    },
+    viewToggleTextActive: {
         color: theme.colors.textInverse,
-        marginRight: theme.spacing.sm,
-    },
-    playoffsArrow: {
-        fontSize: theme.typography.fontSize.lg,
-        color: theme.colors.textInverse,
-        fontWeight: theme.typography.fontWeight.bold,
     },
     scrollContent: {
         flex: 1,
@@ -395,6 +433,28 @@ const styles = StyleSheet.create({
         color: theme.colors.primary,
         fontWeight: theme.typography.fontWeight.semibold,
         marginTop: theme.spacing.sm,
+        textAlign: 'center',
+    },
+    comingSoonContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: theme.spacing.xl * 2,
+        paddingHorizontal: theme.spacing.lg,
+    },
+    comingSoonIcon: {
+        fontSize: 64,
+        marginBottom: theme.spacing.lg,
+    },
+    comingSoonTitle: {
+        fontSize: theme.typography.fontSize.xl,
+        fontWeight: theme.typography.fontWeight.bold,
+        color: theme.colors.primary,
+        marginBottom: theme.spacing.sm,
+    },
+    comingSoonText: {
+        fontSize: theme.typography.fontSize.base,
+        color: theme.colors.textSecondary,
         textAlign: 'center',
     },
 });
