@@ -79,15 +79,22 @@ const StandingsTab: React.FC = () => {
     };
 
     const renderTableHeader = () => (
-        <View style={styles.tableHeader}>
-            <Text style={[styles.headerCell, styles.posCell]}>Pos</Text>
-            <Text style={[styles.headerCell, styles.teamCell]}>Equipo</Text>
-            <Text style={[styles.headerCell, styles.statCell]}>PJ</Text>
-            <Text style={[styles.headerCell, styles.statCell]}>PG</Text>
-            <Text style={[styles.headerCell, styles.statCell]}>PP</Text>
-            <Text style={[styles.headerCell, styles.statCell]}>SF</Text>
-            <Text style={[styles.headerCell, styles.statCell]}>SC</Text>
-            <Text style={[styles.headerCell, styles.ptsCell]}>Pts</Text>
+        <View style={styles.tableHeaderRow}>
+            <View style={styles.stickyColumn}>
+                <Text style={[styles.headerCell, styles.posHeader]}>Pos</Text>
+                <Text style={[styles.headerCell, styles.teamHeader]}>Equipo</Text>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollableColumns}>
+                <View style={styles.statsRow}>
+                    <Text style={[styles.headerCell, styles.statHeader]}>PJ</Text>
+                    <Text style={[styles.headerCell, styles.statHeader]}>PG</Text>
+                    <Text style={[styles.headerCell, styles.statHeader]}>PP</Text>
+                    <Text style={[styles.headerCell, styles.statHeader]}>SF</Text>
+                    <Text style={[styles.headerCell, styles.statHeader]}>SC</Text>
+                    <Text style={[styles.headerCell, styles.statHeader]}>Dif</Text>
+                    <Text style={[styles.headerCell, styles.ptsHeader]}>Pts</Text>
+                </View>
+            </ScrollView>
         </View>
     );
 
@@ -95,21 +102,28 @@ const StandingsTab: React.FC = () => {
         <View
             key={`${standing.grupo}-${standing.equipo}`}
             style={[
-                styles.tableRow,
+                styles.tableDataRow,
                 index % 2 === 0 && styles.tableRowEven,
-                standing.pos <= 4 && styles.tableRowQualified, // Primeros 4 califican
+                standing.pos <= 4 && styles.tableRowQualified,
             ]}
         >
-            <Text style={[styles.cell, styles.posCell, styles.posNumber]}>{standing.pos}</Text>
-            <Text style={[styles.cell, styles.teamCell, styles.teamName]} numberOfLines={1}>
-                {standing.equipo}
-            </Text>
-            <Text style={[styles.cell, styles.statCell]}>{standing.pj}</Text>
-            <Text style={[styles.cell, styles.statCell]}>{standing.pg}</Text>
-            <Text style={[styles.cell, styles.statCell]}>{standing.pp}</Text>
-            <Text style={[styles.cell, styles.statCell]}>{standing.sf}</Text>
-            <Text style={[styles.cell, styles.statCell]}>{standing.sc}</Text>
-            <Text style={[styles.cell, styles.ptsCell, styles.ptsNumber]}>{standing.pts}</Text>
+            <View style={styles.stickyColumn}>
+                <Text style={[styles.dataCell, styles.posData]}>{standing.pos}</Text>
+                <Text style={[styles.dataCell, styles.teamData]} numberOfLines={1}>
+                    {standing.equipo}
+                </Text>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollableColumns}>
+                <View style={styles.statsRow}>
+                    <Text style={[styles.dataCell, styles.statData]}>{standing.pj}</Text>
+                    <Text style={[styles.dataCell, styles.statData]}>{standing.pg}</Text>
+                    <Text style={[styles.dataCell, styles.statData]}>{standing.pp}</Text>
+                    <Text style={[styles.dataCell, styles.statData]}>{standing.sf}</Text>
+                    <Text style={[styles.dataCell, styles.statData]}>{standing.sc}</Text>
+                    <Text style={[styles.dataCell, styles.statData]}>{standing.sf - standing.sc}</Text>
+                    <Text style={[styles.dataCell, styles.ptsData]}>{standing.pts}</Text>
+                </View>
+            </ScrollView>
         </View>
     );
 
@@ -182,7 +196,10 @@ const StandingsTab: React.FC = () => {
                         </View>
                     </View>
                     <Text style={styles.legendNote}>
-                        PJ: Partidos Jugados | PG: Ganados | PP: Perdidos | SF: Sets Favor | SC: Sets Contra | Pts: Puntos
+                        PJ: Partidos Jugados | PG: Ganados | PP: Perdidos | SF: Sets Favor | SC: Sets Contra | Dif: Diferencia de Sets | Pts: Puntos
+                    </Text>
+                    <Text style={styles.legendHint}>
+                        💡 Desliza horizontalmente para ver todas las estadísticas
                     </Text>
                 </View>
             </ScrollView>
@@ -255,24 +272,18 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.primary,
         padding: theme.spacing.md,
     },
-    tableHeader: {
+    tableHeaderRow: {
         flexDirection: 'row',
         backgroundColor: theme.colors.gray100,
-        paddingVertical: theme.spacing.sm,
         borderBottomWidth: 2,
         borderBottomColor: theme.colors.primary,
+        minHeight: 44,
     },
-    headerCell: {
-        fontSize: theme.typography.fontSize.xs,
-        fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.textPrimary,
-        textAlign: 'center',
-    },
-    tableRow: {
+    tableDataRow: {
         flexDirection: 'row',
-        paddingVertical: theme.spacing.md,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.border,
+        minHeight: 52,
     },
     tableRowEven: {
         backgroundColor: theme.colors.gray50,
@@ -281,36 +292,69 @@ const styles = StyleSheet.create({
         borderLeftWidth: 4,
         borderLeftColor: theme.colors.success,
     },
-    cell: {
+    stickyColumn: {
+        flexDirection: 'row',
+        backgroundColor: theme.colors.backgroundCard,
+        borderRightWidth: 2,
+        borderRightColor: theme.colors.primary,
+        zIndex: 1,
+    },
+    scrollableColumns: {
+        flex: 1,
+    },
+    statsRow: {
+        flexDirection: 'row',
+        paddingRight: theme.spacing.base,
+    },
+    headerCell: {
+        fontSize: theme.typography.fontSize.xs,
+        fontWeight: theme.typography.fontWeight.bold,
+        color: theme.colors.textPrimary,
+        textAlign: 'center',
+        paddingVertical: theme.spacing.sm + 2,
+    },
+    dataCell: {
         fontSize: theme.typography.fontSize.sm,
         color: theme.colors.textPrimary,
         textAlign: 'center',
+        paddingVertical: theme.spacing.md,
     },
-    posCell: {
-        width: 40,
+    posHeader: {
+        width: 48,
     },
-    teamCell: {
-        flex: 1,
+    teamHeader: {
+        width: 140,
         textAlign: 'left',
-        paddingHorizontal: theme.spacing.sm,
+        paddingLeft: theme.spacing.sm,
     },
-    statCell: {
-        width: 36,
+    statHeader: {
+        width: 56,
     },
-    ptsCell: {
-        width: 44,
+    ptsHeader: {
+        width: 64,
+        backgroundColor: theme.colors.success + '15',
     },
-    posNumber: {
+    posData: {
+        width: 48,
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.primary,
+        fontSize: theme.typography.fontSize.base,
     },
-    teamName: {
+    teamData: {
+        width: 140,
+        textAlign: 'left',
+        paddingLeft: theme.spacing.sm,
         fontWeight: theme.typography.fontWeight.semibold,
     },
-    ptsNumber: {
+    statData: {
+        width: 56,
+    },
+    ptsData: {
+        width: 64,
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.success,
         fontSize: theme.typography.fontSize.base,
+        backgroundColor: theme.colors.success + '15',
     },
     legend: {
         marginTop: theme.spacing.lg,
@@ -351,6 +395,14 @@ const styles = StyleSheet.create({
         color: theme.colors.textTertiary,
         fontStyle: 'italic',
         marginTop: theme.spacing.xs,
+        lineHeight: 16,
+    },
+    legendHint: {
+        fontSize: theme.typography.fontSize.xs,
+        color: theme.colors.primary,
+        fontWeight: theme.typography.fontWeight.semibold,
+        marginTop: theme.spacing.sm,
+        textAlign: 'center',
     },
 });
 
