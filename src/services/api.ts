@@ -49,6 +49,12 @@ class TournamentService {
   static async getTournamentTeams(id: number): Promise<Team[]> {
     try {
       const response = await api.get<ApiResponse<Team[]>>(`/v1/tournaments/${id}/teams`);
+
+      // Debug: Ver toda la respuesta
+      console.log('Teams API Response:', JSON.stringify(response.data, null, 2));
+      console.log('Teams data type:', typeof response.data);
+      console.log('Teams data.data:', response.data.data);
+
       return response.data.data;
     } catch (error) {
       console.error('Error fetching tournament teams:', error);
