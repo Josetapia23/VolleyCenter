@@ -69,10 +69,45 @@ const StandingsTab: React.FC<Props> = ({ tournamentId }) => {
         return acc;
     }, [] as StandingsGroup[]);
 
-    // Ordenar equipos dentro de cada grupo por posición
+    // Ordenar y calcular posiciones dentro de cada grupo
     consolidatedGroups.forEach(group => {
-        group.equipos.sort((a, b) => a.posicion - b.posicion);
+        // Ordenar equipos por criterios de desempate
+        group.equipos.sort((a, b) => {
+            const statsA = a.estadisticas;
+            const statsB = b.estadisticas;
+
+            // 1. Por puntos (descendente)
+            if (statsB.puntos !== statsA.puntos) {
+                return statsB.puntos - statsA.puntos;
+            }
+
+            // 2. Por diferencia de sets (descendente)
+            if (statsB.diferencia_sets !== statsA.diferencia_sets) {
+                return statsB.diferencia_sets - statsA.diferencia_sets;
+            }
+
+            // 3. Por sets a favor (descendente)
+            if (statsB.sets_favor !== statsA.sets_favor) {
+                return statsB.sets_favor - statsA.sets_favor;
+            }
+
+            // 4. Por diferencia de tantos (descendente)
+            if (statsB.diferencia_tantos !== statsA.diferencia_tantos) {
+                return statsB.diferencia_tantos - statsA.diferencia_tantos;
+            }
+
+            // 5. Por tantos a favor (descendente)
+            return statsB.tantos_favor - statsA.tantos_favor;
+        });
+
+        // Asignar posiciones después de ordenar
+        group.equipos.forEach((equipo, index) => {
+            equipo.posicion = index + 1;
+        });
     });
+
+    // Ordenar grupos alfabéticamente
+    consolidatedGroups.sort((a, b) => a.grupo.localeCompare(b.grupo));
 
     // Filtrar posiciones por grupo
     const getFilteredPositions = () => {
