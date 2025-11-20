@@ -53,19 +53,40 @@ const StandingsTab: React.FC<Props> = ({ tournamentId }) => {
     // Obtener grupos únicos
     const groups = standingsData.posiciones.map(p => p.grupo).sort();
 
+    // Consolidar equipos por grupo (el backend puede enviar el mismo grupo en múltiples objetos)
+    const consolidatedGroups = standingsData.posiciones.reduce((acc, positionGroup) => {
+        const existingGroup = acc.find(g => g.grupo === positionGroup.grupo);
+        if (existingGroup) {
+            // Si el grupo ya existe, agregar los equipos nuevos
+            existingGroup.equipos.push(...positionGroup.equipos);
+        } else {
+            // Si no existe, crear nuevo grupo
+            acc.push({
+                grupo: positionGroup.grupo,
+                equipos: [...positionGroup.equipos]
+            });
+        }
+        return acc;
+    }, [] as StandingsGroup[]);
+
+    // Ordenar equipos dentro de cada grupo por posición
+    consolidatedGroups.forEach(group => {
+        group.equipos.sort((a, b) => a.posicion - b.posicion);
+    });
+
     // Filtrar posiciones por grupo
     const getFilteredPositions = () => {
         if (selectedGroup) {
-            return standingsData.posiciones.filter(p => p.grupo === selectedGroup);
+            return consolidatedGroups.filter(p => p.grupo === selectedGroup);
         }
-        return standingsData.posiciones;
+        return consolidatedGroups;
     };
 
     const filteredPositions = getFilteredPositions();
 
     // Opciones para el selector
     const getGroupOptions = (): SelectOption[] => {
-        const totalEquipos = standingsData.posiciones.reduce((sum, p) => sum + p.equipos.length, 0);
+        const totalEquipos = consolidatedGroups.reduce((sum, p) => sum + p.equipos.length, 0);
         const options: SelectOption[] = [
             {
                 label: 'Todos los grupos',
@@ -74,13 +95,11 @@ const StandingsTab: React.FC<Props> = ({ tournamentId }) => {
             },
         ];
 
-        groups.forEach((group) => {
-            const groupData = standingsData.posiciones.find(p => p.grupo === group);
-            const count = groupData?.equipos.length || 0;
+        consolidatedGroups.forEach((groupData) => {
             options.push({
-                label: group,
-                value: group,
-                count,
+                label: groupData.grupo,
+                value: groupData.grupo,
+                count: groupData.equipos.length,
             });
         });
 
