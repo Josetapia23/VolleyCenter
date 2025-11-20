@@ -1,6 +1,6 @@
 // src/services/api.ts
 import axios from 'axios';
-import { Tournament, TournamentDetail, Match, ApiResponse, Team } from '../types/tournament';
+import { Tournament, TournamentDetail, Match, ApiResponse, Team, StandingsResponse } from '../types/tournament';
 
 // Configuración base de la API
 const BASE_URL = 'http://10.9.222.141/volleycenter-api'; // Cambia por tu URL real
@@ -57,9 +57,10 @@ class TournamentService {
   }
 
   // Obtener tabla de posiciones de un torneo
-  static async getTournamentStandings(id: number) {
+  static async getTournamentStandings(id: number, grupo?: string): Promise<StandingsResponse> {
     try {
-      const response = await api.get(`/v1/tournaments/${id}/standings`);
+      const params = grupo ? { grupo } : {};
+      const response = await api.get<ApiResponse<StandingsResponse>>(`/v1/tournaments/${id}/standings`, { params });
       return response.data.data;
     } catch (error) {
       console.error('Error fetching tournament standings:', error);

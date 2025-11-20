@@ -47,16 +47,32 @@ export interface Team {
 export interface TeamStanding {
   posicion: number;
   equipo: Team;
-  partidos_jugados: number;
-  partidos_ganados: number;
-  partidos_perdidos: number;
-  sets_favor: number;
-  sets_contra: number;
-  puntos_favor: number;
-  puntos_contra: number;
-  puntos: number;
-  diferencia_sets: number;
-  diferencia_puntos: number;
+  estadisticas: {
+    partidos_jugados: number;
+    partidos_ganados: number;
+    partidos_perdidos: number;
+    sets_favor: number;
+    sets_contra: number;
+    diferencia_sets: number;
+    tantos_favor: number;
+    tantos_contra: number;
+    diferencia_tantos: number;
+    puntos: number;
+  };
+}
+
+export interface StandingsGroup {
+  grupo: string;
+  equipos: TeamStanding[];
+}
+
+export interface StandingsResponse {
+  torneo: {
+    id: number;
+    nombre: string;
+  };
+  grupo_filtro: string | null;
+  posiciones: StandingsGroup[];
 }
 
 export interface Match {

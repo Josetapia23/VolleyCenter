@@ -1,74 +1,82 @@
 // src/features/tournaments/tabs/StandingsTab.tsx
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Select, SelectOption } from '../../../shared/components';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { Select, SelectOption, LoadingSpinner } from '../../../shared/components';
 import { theme } from '../../../shared/theme';
+import TournamentService from '../../../services/api';
+import { StandingsResponse, TeamStanding } from '../../../types/tournament';
 
-// Datos de muestra para demostración
-const MOCK_STANDINGS = [
-    // Grupo A
-    { pos: 1, equipo: 'ROJICA', pj: 5, pg: 5, pp: 0, sf: 15, sc: 2, pts: 15, grupo: 'Grupo A' },
-    { pos: 2, equipo: 'DVA BLACK', pj: 5, pg: 4, pp: 1, sf: 13, sc: 4, pts: 12, grupo: 'Grupo A' },
-    { pos: 3, equipo: 'COMFAMILIAR', pj: 5, pg: 3, pp: 2, sf: 10, sc: 8, pts: 9, grupo: 'Grupo A' },
-    { pos: 4, equipo: 'ACADEVOLEY B', pj: 5, pg: 2, pp: 3, sf: 8, sc: 10, pts: 6, grupo: 'Grupo A' },
-    { pos: 5, equipo: 'TAVOVOLLEY B', pj: 5, pg: 1, pp: 4, sf: 5, sc: 13, pts: 3, grupo: 'Grupo A' },
-    { pos: 6, equipo: 'TEAM ALPHA', pj: 5, pg: 0, pp: 5, sf: 1, sc: 15, pts: 0, grupo: 'Grupo A' },
+interface Props {
+    tournamentId: number;
+}
 
-    // Grupo B
-    { pos: 1, equipo: 'VOLLEY STARS', pj: 5, pg: 5, pp: 0, sf: 15, sc: 1, pts: 15, grupo: 'Grupo B' },
-    { pos: 2, equipo: 'BEACH KINGS', pj: 5, pg: 4, pp: 1, sf: 12, sc: 5, pts: 12, grupo: 'Grupo B' },
-    { pos: 3, equipo: 'NET WARRIORS', pj: 5, pg: 3, pp: 2, sf: 11, sc: 7, pts: 9, grupo: 'Grupo B' },
-    { pos: 4, equipo: 'SPIKE MASTERS', pj: 5, pg: 2, pp: 3, sf: 7, sc: 11, pts: 6, grupo: 'Grupo B' },
-    { pos: 5, equipo: 'COURT HEROES', pj: 5, pg: 1, pp: 4, sf: 4, sc: 13, pts: 3, grupo: 'Grupo B' },
-    { pos: 6, equipo: 'TEAM BETA', pj: 5, pg: 0, pp: 5, sf: 2, sc: 15, pts: 0, grupo: 'Grupo B' },
-
-    // Grupo C
-    { pos: 1, equipo: 'POWER HITTERS', pj: 5, pg: 4, pp: 1, sf: 14, sc: 4, pts: 12, grupo: 'Grupo C' },
-    { pos: 2, equipo: 'BLOCK BUSTERS', pj: 5, pg: 4, pp: 1, sf: 13, sc: 5, pts: 12, grupo: 'Grupo C' },
-    { pos: 3, equipo: 'ACE SQUAD', pj: 5, pg: 3, pp: 2, sf: 10, sc: 8, pts: 9, grupo: 'Grupo C' },
-    { pos: 4, equipo: 'SERVE KINGS', pj: 5, pg: 2, pp: 3, sf: 8, sc: 10, pts: 6, grupo: 'Grupo C' },
-    { pos: 5, equipo: 'DIG MASTERS', pj: 5, pg: 1, pp: 4, sf: 5, sc: 12, pts: 3, grupo: 'Grupo C' },
-    { pos: 6, equipo: 'TEAM GAMMA', pj: 5, pg: 1, pp: 4, sf: 4, sc: 15, pts: 3, grupo: 'Grupo C' },
-];
-
-const StandingsTab: React.FC = () => {
+const StandingsTab: React.FC<Props> = ({ tournamentId }) => {
     const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
     const [activeView, setActiveView] = useState<'standings' | 'playoffs'>('standings');
+    const [standingsData, setStandingsData] = useState<StandingsResponse | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    // Obtener grupos únicos
-    const groups = Array.from(new Set(MOCK_STANDINGS.map(s => s.grupo))).sort();
+    useEffect(() => {
+        loadStandings();
+    }, [tournamentId]);
 
-    // Filtrar posiciones por grupo
-    const getFilteredStandings = () => {
-        if (selectedGroup) {
-            return MOCK_STANDINGS.filter(s => s.grupo === selectedGroup);
+    const loadStandings = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const data = await TournamentService.getTournamentStandings(tournamentId);
+            setStandingsData(data);
+        } catch (err) {
+            console.error('Error loading standings:', err);
+            setError('Error al cargar las posiciones');
+        } finally {
+            setLoading(false);
         }
-        return MOCK_STANDINGS;
     };
 
-    const filteredStandings = getFilteredStandings();
+    if (loading) {
+        return <LoadingSpinner message="Cargando tabla de posiciones..." />;
+    }
 
-    // Agrupar por grupo cuando no hay filtro
-    const standingsByGroup = MOCK_STANDINGS.reduce((acc, standing) => {
-        if (!acc[standing.grupo]) {
-            acc[standing.grupo] = [];
+    if (error || !standingsData) {
+        return (
+            <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error || 'No hay datos disponibles'}</Text>
+                <TouchableOpacity style={styles.retryButton} onPress={loadStandings}>
+                    <Text style={styles.retryButtonText}>Reintentar</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
+    // Obtener grupos únicos
+    const groups = standingsData.posiciones.map(p => p.grupo).sort();
+
+    // Filtrar posiciones por grupo
+    const getFilteredPositions = () => {
+        if (selectedGroup) {
+            return standingsData.posiciones.filter(p => p.grupo === selectedGroup);
         }
-        acc[standing.grupo].push(standing);
-        return acc;
-    }, {} as Record<string, typeof MOCK_STANDINGS>);
+        return standingsData.posiciones;
+    };
+
+    const filteredPositions = getFilteredPositions();
 
     // Opciones para el selector
     const getGroupOptions = (): SelectOption[] => {
+        const totalEquipos = standingsData.posiciones.reduce((sum, p) => sum + p.equipos.length, 0);
         const options: SelectOption[] = [
             {
                 label: 'Todos los grupos',
                 value: null,
-                count: MOCK_STANDINGS.length,
+                count: totalEquipos,
             },
         ];
 
         groups.forEach((group) => {
-            const count = MOCK_STANDINGS.filter(s => s.grupo === group).length;
+            const groupData = standingsData.posiciones.find(p => p.grupo === group);
+            const count = groupData?.equipos.length || 0;
             options.push({
                 label: group,
                 value: group,
@@ -80,9 +88,9 @@ const StandingsTab: React.FC = () => {
     };
 
     const renderStandings = () => {
-        const renderGroupTable = (group: string, standings: typeof MOCK_STANDINGS) => (
-            <View key={group} style={styles.tableContainer}>
-                <Text style={styles.groupTitle}>{group}</Text>
+        const renderGroupTable = (groupData: { grupo: string; equipos: TeamStanding[] }) => (
+            <View key={groupData.grupo} style={styles.tableContainer}>
+                <Text style={styles.groupTitle}>{groupData.grupo}</Text>
 
                 <ScrollView
                     horizontal
@@ -99,47 +107,65 @@ const StandingsTab: React.FC = () => {
                             <Text style={[styles.headerCell, styles.statHeader]}>PP</Text>
                             <Text style={[styles.headerCell, styles.statHeader]}>SF</Text>
                             <Text style={[styles.headerCell, styles.statHeader]}>SC</Text>
-                            <Text style={[styles.headerCell, styles.statHeader]}>Dif</Text>
+                            <Text style={[styles.headerCell, styles.statHeader]}>Dif S</Text>
+                            <Text style={[styles.headerCell, styles.statHeader]}>TF</Text>
+                            <Text style={[styles.headerCell, styles.statHeader]}>TC</Text>
+                            <Text style={[styles.headerCell, styles.statHeader]}>Dif T</Text>
                             <Text style={[styles.headerCell, styles.ptsHeader]}>Pts</Text>
                         </View>
 
                         {/* Filas */}
-                        {standings.map((standing, index) => (
-                            <View
-                                key={standing.equipo}
-                                style={[
-                                    styles.tableDataRow,
-                                    index % 2 === 0 && styles.tableRowEven,
-                                    standing.pos <= 4 && styles.tableRowQualified,
-                                ]}
-                            >
-                                <Text style={[styles.dataCell, styles.posData]}>{standing.pos}</Text>
-                                <Text style={[styles.dataCell, styles.teamData]} numberOfLines={1} ellipsizeMode="tail">
-                                    {standing.equipo}
-                                </Text>
-                                <Text style={[styles.dataCell, styles.statData]}>{standing.pj}</Text>
-                                <Text style={[styles.dataCell, styles.statData]}>{standing.pg}</Text>
-                                <Text style={[styles.dataCell, styles.statData]}>{standing.pp}</Text>
-                                <Text style={[styles.dataCell, styles.statData]}>{standing.sf}</Text>
-                                <Text style={[styles.dataCell, styles.statData]}>{standing.sc}</Text>
-                                <Text style={[styles.dataCell, styles.statData]}>{standing.sf - standing.sc}</Text>
-                                <Text style={[styles.dataCell, styles.ptsData]}>{standing.pts}</Text>
-                            </View>
-                        ))}
+                        {groupData.equipos.map((standing, index) => {
+                            const stats = standing.estadisticas;
+                            return (
+                                <View
+                                    key={standing.equipo.id}
+                                    style={[
+                                        styles.tableDataRow,
+                                        index % 2 === 0 && styles.tableRowEven,
+                                        standing.posicion <= 4 && styles.tableRowQualified,
+                                    ]}
+                                >
+                                    <Text style={[styles.dataCell, styles.posData]}>{standing.posicion}</Text>
+
+                                    {/* Equipo con logo */}
+                                    <View style={[styles.dataCell, styles.teamData]}>
+                                        {standing.equipo.logo ? (
+                                            <Image
+                                                source={{ uri: standing.equipo.logo }}
+                                                style={styles.teamLogo}
+                                                resizeMode="contain"
+                                            />
+                                        ) : null}
+                                        <Text
+                                            style={styles.teamName}
+                                            numberOfLines={1}
+                                            ellipsizeMode="tail"
+                                        >
+                                            {standing.equipo.nombre}
+                                        </Text>
+                                    </View>
+
+                                    <Text style={[styles.dataCell, styles.statData]}>{stats.partidos_jugados}</Text>
+                                    <Text style={[styles.dataCell, styles.statData]}>{stats.partidos_ganados}</Text>
+                                    <Text style={[styles.dataCell, styles.statData]}>{stats.partidos_perdidos}</Text>
+                                    <Text style={[styles.dataCell, styles.statData]}>{stats.sets_favor}</Text>
+                                    <Text style={[styles.dataCell, styles.statData]}>{stats.sets_contra}</Text>
+                                    <Text style={[styles.dataCell, styles.statData]}>{stats.diferencia_sets}</Text>
+                                    <Text style={[styles.dataCell, styles.statData]}>{stats.tantos_favor}</Text>
+                                    <Text style={[styles.dataCell, styles.statData]}>{stats.tantos_contra}</Text>
+                                    <Text style={[styles.dataCell, styles.statData]}>{stats.diferencia_tantos}</Text>
+                                    <Text style={[styles.dataCell, styles.ptsData]}>{stats.puntos}</Text>
+                                </View>
+                            );
+                        })}
                     </View>
                 </ScrollView>
             </View>
         );
 
-        if (selectedGroup) {
-            // Vista filtrada por grupo
-            return renderGroupTable(selectedGroup, filteredStandings);
-        }
-
-        // Vista agrupada
-        return Object.entries(standingsByGroup).map(([group, standings]) =>
-            renderGroupTable(group, standings)
-        );
+        // Renderizar según filtro
+        return filteredPositions.map((groupData) => renderGroupTable(groupData));
     };
 
     return (
@@ -219,7 +245,8 @@ const StandingsTab: React.FC = () => {
                         </View>
                     </View>
                     <Text style={styles.legendNote}>
-                        PJ: Partidos Jugados | PG: Ganados | PP: Perdidos | SF: Sets Favor | SC: Sets Contra | Dif: Diferencia de Sets | Pts: Puntos
+                        PJ: Partidos Jugados | PG: Ganados | PP: Perdidos | SF: Sets Favor | SC: Sets Contra | Dif S: Diferencia Sets{'\n'}
+                        TF: Tantos Favor | TC: Tantos Contra | Dif T: Diferencia Tantos | Pts: Puntos
                     </Text>
                     <Text style={styles.legendHint}>
                         💡 Desliza horizontalmente para ver todas las estadísticas
@@ -352,13 +379,13 @@ const styles = StyleSheet.create({
         width: 48,
     },
     teamHeader: {
-        width: 140,
+        width: 160,
         textAlign: 'left',
         paddingLeft: theme.spacing.sm,
         overflow: 'hidden',
     },
     statHeader: {
-        width: 56,
+        width: 52,
     },
     ptsHeader: {
         width: 70,
@@ -371,14 +398,26 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.base,
     },
     teamData: {
-        width: 140,
-        textAlign: 'left',
+        width: 160,
+        flexDirection: 'row',
+        alignItems: 'center',
         paddingLeft: theme.spacing.sm,
-        fontWeight: theme.typography.fontWeight.semibold,
         overflow: 'hidden',
     },
+    teamLogo: {
+        width: 24,
+        height: 24,
+        marginRight: theme.spacing.xs,
+        borderRadius: theme.borderRadius.sm,
+    },
+    teamName: {
+        flex: 1,
+        fontSize: theme.typography.fontSize.sm,
+        color: theme.colors.textPrimary,
+        fontWeight: theme.typography.fontWeight.semibold,
+    },
     statData: {
-        width: 56,
+        width: 52,
     },
     ptsData: {
         width: 70,
@@ -459,6 +498,29 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.fontSize.base,
         color: theme.colors.textSecondary,
         textAlign: 'center',
+    },
+    errorContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: theme.spacing.lg,
+    },
+    errorText: {
+        fontSize: theme.typography.fontSize.base,
+        color: theme.colors.error,
+        textAlign: 'center',
+        marginBottom: theme.spacing.md,
+    },
+    retryButton: {
+        backgroundColor: theme.colors.primary,
+        paddingVertical: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.lg,
+        borderRadius: theme.borderRadius.md,
+    },
+    retryButtonText: {
+        fontSize: theme.typography.fontSize.sm,
+        fontWeight: theme.typography.fontWeight.semibold,
+        color: theme.colors.textInverse,
     },
 });
 
