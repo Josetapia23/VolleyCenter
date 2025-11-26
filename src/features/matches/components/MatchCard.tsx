@@ -12,6 +12,12 @@ interface MatchCardProps {
 const MatchCard: React.FC<MatchCardProps> = ({ match, onPress }) => {
     const Container = onPress ? TouchableOpacity : View;
 
+    // Determinar ganador para aplicar colores
+    const team1Score = match.resultado?.sets_equipo_1 || 0;
+    const team2Score = match.resultado?.sets_equipo_2 || 0;
+    const team1Won = team1Score > team2Score;
+    const team2Won = team2Score > team1Score;
+
     return (
         <Container
             style={styles.matchCard}
@@ -35,60 +41,85 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onPress }) => {
                 </View>
             </View>
 
-            {/* Equipo 1 */}
-            <View style={styles.teamRow}>
-                <View style={styles.teamInfo}>
+            {/* Layout Principal: Equipo 1 | Marcador | Equipo 2 */}
+            <View style={styles.matchMainContent}>
+                {/* Equipo 1 - Izquierda */}
+                <View style={styles.teamColumn}>
                     <Image
-                        source={{ uri: match.equipo_1?.logo || 'https://via.placeholder.com/50' }}
+                        source={{ uri: match.equipo_1?.logo || 'https://via.placeholder.com/35' }}
                         style={styles.teamLogo}
                     />
-                    <View style={styles.teamDetails}>
-                        <Text style={styles.teamName}>{match.equipo_1?.nombre || 'Equipo 1'}</Text>
-                        {match.equipo_1?.grupo && <Text style={styles.teamGroup}>Grupo {match.equipo_1.grupo}</Text>}
-                    </View>
+                    <Text style={styles.teamName} numberOfLines={2}>
+                        {match.equipo_1?.nombre || 'Equipo 1'}
+                    </Text>
+                    {match.equipo_1?.grupo && (
+                        <Text style={styles.teamGroup}>Grupo {match.equipo_1.grupo}</Text>
+                    )}
                 </View>
-                {match.resultado && (
-                    <Text style={styles.teamScore}>{match.resultado.sets_equipo_1}</Text>
-                )}
-            </View>
 
-            {/* VS */}
-            <Text style={styles.vsText}>vs</Text>
-
-            {/* Equipo 2 */}
-            <View style={styles.teamRow}>
-                <View style={styles.teamInfo}>
-                    <Image
-                        source={{ uri: match.equipo_2?.logo || 'https://via.placeholder.com/50' }}
-                        style={styles.teamLogo}
-                    />
-                    <View style={styles.teamDetails}>
-                        <Text style={styles.teamName}>{match.equipo_2?.nombre || 'Equipo 2'}</Text>
-                        {match.equipo_2?.grupo && <Text style={styles.teamGroup}>Grupo {match.equipo_2.grupo}</Text>}
-                    </View>
-                </View>
-                {match.resultado && (
-                    <Text style={styles.teamScore}>{match.resultado.sets_equipo_2}</Text>
-                )}
-            </View>
-
-            {/* Resultado por Sets */}
-            {match.resultado && (
-                <View style={styles.setsResultContainer}>
-                    <Text style={styles.setsResultTitle}>Resultado por sets:</Text>
-                    <View style={styles.setsColumn}>
-                        <Text style={styles.setResult}>
-                            Set 1: {match.resultado.set_1_equipo_1} - {match.resultado.set_1_equipo_2}
-                        </Text>
-                        <Text style={styles.setResult}>
-                            Set 2: {match.resultado.set_2_equipo_1} - {match.resultado.set_2_equipo_2}
-                        </Text>
-                        {match.resultado.set_3_equipo_1 !== undefined && (
-                            <Text style={styles.setResult}>
-                                Set 3: {match.resultado.set_3_equipo_1} - {match.resultado.set_3_equipo_2}
+                {/* Marcador Central */}
+                <View style={styles.scoreContainer}>
+                    {match.resultado ? (
+                        <>
+                            <Text style={[
+                                styles.scoreNumber,
+                                team1Won && styles.scoreWinner,
+                                !team1Won && team2Won && styles.scoreLoser
+                            ]}>
+                                {team1Score}
                             </Text>
-                        )}
+                            <Text style={styles.vsText}>vs</Text>
+                            <Text style={[
+                                styles.scoreNumber,
+                                team2Won && styles.scoreWinner,
+                                !team2Won && team1Won && styles.scoreLoser
+                            ]}>
+                                {team2Score}
+                            </Text>
+                        </>
+                    ) : (
+                        <Text style={styles.vsText}>vs</Text>
+                    )}
+                </View>
+
+                {/* Equipo 2 - Derecha */}
+                <View style={styles.teamColumn}>
+                    <Image
+                        source={{ uri: match.equipo_2?.logo || 'https://via.placeholder.com/35' }}
+                        style={styles.teamLogo}
+                    />
+                    <Text style={styles.teamName} numberOfLines={2}>
+                        {match.equipo_2?.nombre || 'Equipo 2'}
+                    </Text>
+                    {match.equipo_2?.grupo && (
+                        <Text style={styles.teamGroup}>Grupo {match.equipo_2.grupo}</Text>
+                    )}
+                </View>
+            </View>
+
+            {/* Sets en Cuadritos Horizontales */}
+            {match.resultado && (
+                <View style={styles.setsContainer}>
+                    <View style={styles.setBox}>
+                        <Text style={styles.setLabel}>Set 1</Text>
+                        <Text style={styles.setScore}>
+                            {match.resultado.set_1_equipo_1} - {match.resultado.set_1_equipo_2}
+                        </Text>
                     </View>
+                    <View style={styles.setBox}>
+                        <Text style={styles.setLabel}>Set 2</Text>
+                        <Text style={styles.setScore}>
+                            {match.resultado.set_2_equipo_1} - {match.resultado.set_2_equipo_2}
+                        </Text>
+                    </View>
+                    {match.resultado.set_3_equipo_1 !== undefined && (
+                        <View style={styles.setBox}>
+                            <Text style={styles.setLabel}>Set 3</Text>
+                            <Text style={styles.setScore}>
+                                {match.resultado.set_3_equipo_1} - {match.resultado.set_3_equipo_2}
+                            </Text>
+                        </View>
+                    )}
                 </View>
             )}
         </Container>
@@ -99,94 +130,114 @@ const styles = StyleSheet.create({
     matchCard: {
         backgroundColor: theme.colors.backgroundCard,
         borderRadius: theme.borderRadius.lg,
-        padding: theme.spacing.base,
-        marginBottom: theme.spacing.base,
-        ...theme.getCardShadow('md'),
+        padding: theme.spacing.sm + 2,
+        marginBottom: theme.spacing.sm + 2,
+        ...theme.getCardShadow('sm'),
     },
     matchHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: theme.spacing.base,
+        marginBottom: theme.spacing.sm,
     },
     matchDate: {
-        fontSize: theme.typography.fontSize.sm + 1,
+        fontSize: theme.typography.fontSize.sm,
         color: theme.colors.textSecondary,
         fontWeight: theme.typography.fontWeight.medium,
     },
     matchStatus: {
-        paddingHorizontal: theme.spacing.base,
-        paddingVertical: theme.spacing.xs + 2,
+        paddingHorizontal: theme.spacing.sm + 2,
+        paddingVertical: theme.spacing.xs,
         borderRadius: theme.borderRadius.xl,
     },
     matchStatusText: {
-        fontSize: theme.typography.fontSize.sm,
+        fontSize: theme.typography.fontSize.xs + 1,
         color: theme.colors.textInverse,
         fontWeight: theme.typography.fontWeight.bold,
     },
-    teamRow: {
+    // Layout Principal de 3 Columnas
+    matchMainContent: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginVertical: theme.spacing.sm,
     },
-    teamInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    teamColumn: {
         flex: 1,
+        alignItems: 'center',
+        paddingHorizontal: theme.spacing.xs,
     },
     teamLogo: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        marginRight: theme.spacing.md,
-    },
-    teamDetails: {
-        flex: 1,
+        width: 35,
+        height: 35,
+        borderRadius: 17.5,
+        marginBottom: theme.spacing.xs,
     },
     teamName: {
-        fontSize: theme.typography.fontSize.base,
+        fontSize: theme.typography.fontSize.sm,
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.textPrimary,
+        textAlign: 'center',
         marginBottom: 2,
     },
     teamGroup: {
-        fontSize: theme.typography.fontSize.sm + 1,
+        fontSize: theme.typography.fontSize.xs + 1,
         color: theme.colors.textSecondary,
+        textAlign: 'center',
     },
-    teamScore: {
-        fontSize: theme.typography.fontSize.huge,
-        fontWeight: theme.typography.fontWeight.bold,
-        color: theme.colors.primary,
-        marginLeft: theme.spacing.base,
+    // Contenedor de Marcador Central
+    scoreContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: theme.spacing.sm,
+    },
+    scoreNumber: {
+        fontSize: theme.typography.fontSize.huge + 4,
+        fontWeight: theme.typography.fontWeight.extrabold,
+        color: theme.colors.textPrimary,
+    },
+    scoreWinner: {
+        color: '#16a34a', // Verde para ganador
+    },
+    scoreLoser: {
+        color: theme.colors.textTertiary, // Gris para perdedor
     },
     vsText: {
-        fontSize: theme.typography.fontSize.md,
+        fontSize: theme.typography.fontSize.sm,
         color: theme.colors.textTertiary,
-        fontWeight: theme.typography.fontWeight.bold,
+        fontWeight: theme.typography.fontWeight.semibold,
         textAlign: 'center',
-        marginVertical: theme.spacing.xs,
+        marginVertical: 2,
     },
-    setsResultContainer: {
+    // Sets en Cuadritos Horizontales
+    setsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: theme.spacing.xs + 2,
+        marginTop: theme.spacing.sm,
+        flexWrap: 'wrap',
+    },
+    setBox: {
         backgroundColor: theme.colors.gray50,
         borderRadius: theme.borderRadius.md,
-        padding: theme.spacing.base,
-        marginTop: theme.spacing.base,
+        paddingVertical: theme.spacing.xs,
+        paddingHorizontal: theme.spacing.sm,
+        minWidth: 85,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: theme.colors.gray100,
     },
-    setsResultTitle: {
-        fontSize: theme.typography.fontSize.md,
+    setLabel: {
+        fontSize: theme.typography.fontSize.xs + 1,
+        fontWeight: theme.typography.fontWeight.bold,
+        color: theme.colors.textSecondary,
+        marginBottom: 2,
+    },
+    setScore: {
+        fontSize: theme.typography.fontSize.sm,
         fontWeight: theme.typography.fontWeight.bold,
         color: theme.colors.textPrimary,
-        marginBottom: theme.spacing.sm,
-    },
-    setsColumn: {
-        gap: theme.spacing.sm,
-    },
-    setResult: {
-        fontSize: theme.typography.fontSize.base,
-        color: theme.colors.textPrimary,
-        fontWeight: theme.typography.fontWeight.semibold,
-        paddingVertical: theme.spacing.xs,
     },
 });
 
