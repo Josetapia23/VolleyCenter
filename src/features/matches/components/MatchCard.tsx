@@ -68,7 +68,7 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onPress }) => {
                             ]}>
                                 {team1Score}
                             </Text>
-                            <Text style={styles.vsText}>vs</Text>
+                            <Text style={styles.scoreSeparator}>-</Text>
                             <Text style={[
                                 styles.scoreNumber,
                                 team2Won && styles.scoreWinner,
@@ -187,9 +187,11 @@ const styles = StyleSheet.create({
     },
     // Contenedor de Marcador Central
     scoreContainer: {
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: theme.spacing.sm,
+        gap: theme.spacing.xs,
     },
     scoreNumber: {
         fontSize: theme.typography.fontSize.huge + 4,
@@ -201,6 +203,12 @@ const styles = StyleSheet.create({
     },
     scoreLoser: {
         color: theme.colors.textTertiary, // Gris para perdedor
+    },
+    scoreSeparator: {
+        fontSize: theme.typography.fontSize.huge,
+        fontWeight: theme.typography.fontWeight.bold,
+        color: theme.colors.textTertiary,
+        marginHorizontal: theme.spacing.xs - 2,
     },
     vsText: {
         fontSize: theme.typography.fontSize.sm,
