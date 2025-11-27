@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Tournament, TournamentDetail, Match, ApiResponse, Team, StandingsResponse } from '../types/tournament';
 
 // Configuración base de la API
-const BASE_URL = 'http://10.9.222.141/volleycenter-api'; // Cambia por tu URL real
+const BASE_URL = 'http://10.9.223.159/volleycenter-api'; // Cambia por tu URL real
 
 const api = axios.create({
   baseURL: BASE_URL,
