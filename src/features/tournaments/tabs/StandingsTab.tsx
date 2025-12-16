@@ -299,64 +299,63 @@ const StandingsTab: React.FC<Props> = ({ tournamentId }) => {
                 )}
             </View>
 
-            {/* Tabla scrolleable */}
-            <ScrollView
-                style={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContentContainer}
-            >
-                {activeView === 'standings' ? (
-                    <>
-                        {renderStandings()}
+            {/* Contenido */}
+            {activeView === 'standings' ? (
+                // Vista de Tabla de Posiciones con ScrollView
+                <ScrollView
+                    style={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles.scrollContentContainer}
+                >
+                    {renderStandings()}
 
-                        {/* Leyenda */}
-                        <View style={styles.legend}>
-                    <Text style={styles.legendTitle}>Leyenda:</Text>
-                    <View style={styles.legendRow}>
-                        <View style={styles.legendItem}>
-                            <View style={[styles.legendColor, styles.qualifiedColor]} />
-                            <Text style={styles.legendText}>Clasifican a Playoffs (Top 4)</Text>
+                    {/* Leyenda */}
+                    <View style={styles.legend}>
+                        <Text style={styles.legendTitle}>Leyenda:</Text>
+                        <View style={styles.legendRow}>
+                            <View style={styles.legendItem}>
+                                <View style={[styles.legendColor, styles.qualifiedColor]} />
+                                <Text style={styles.legendText}>Clasifican a Playoffs (Top 4)</Text>
+                            </View>
+                            <View style={styles.legendItem}>
+                                <View style={[styles.legendColor, styles.notQualifiedColor]} />
+                                <Text style={styles.legendText}>Fuera de clasificación</Text>
+                            </View>
                         </View>
-                        <View style={styles.legendItem}>
-                            <View style={[styles.legendColor, styles.notQualifiedColor]} />
-                            <Text style={styles.legendText}>Fuera de clasificación</Text>
-                        </View>
+                        <Text style={styles.legendNote}>
+                            PJ: Partidos Jugados | PG: Ganados | PP: Perdidos | SF: Sets Favor | SC: Sets Contra | Dif S: Diferencia Sets{'\n'}
+                            TF: Tantos Favor | TC: Tantos Contra | Dif T: Diferencia Tantos | Pts: Puntos
+                        </Text>
+                        <Text style={styles.legendHint}>
+                            💡 Desliza horizontalmente para ver todas las estadísticas
+                        </Text>
                     </View>
-                    <Text style={styles.legendNote}>
-                        PJ: Partidos Jugados | PG: Ganados | PP: Perdidos | SF: Sets Favor | SC: Sets Contra | Dif S: Diferencia Sets{'\n'}
-                        TF: Tantos Favor | TC: Tantos Contra | Dif T: Diferencia Tantos | Pts: Puntos
-                    </Text>
-                    <Text style={styles.legendHint}>
-                        💡 Desliza horizontalmente para ver todas las estadísticas
-                    </Text>
+                </ScrollView>
+            ) : (
+                // Vista de Playoffs SIN ScrollView adicional (usa los propios del PlayoffBracket)
+                <View style={styles.playoffContent}>
+                    {playoffLoading ? (
+                        <LoadingSpinner message="Cargando playoffs..." />
+                    ) : playoffError ? (
+                        <View style={styles.errorContainer}>
+                            <Text style={styles.errorText}>{playoffError}</Text>
+                            <TouchableOpacity style={styles.retryButton} onPress={loadPlayoffs}>
+                                <Text style={styles.retryButtonText}>Reintentar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : playoffData && playoffData.fases.length > 0 ? (
+                        <PlayoffBracket phases={playoffData.fases} />
+                    ) : (
+                        <View style={styles.comingSoonContainer}>
+                            <Text style={styles.comingSoonIcon}>🏆</Text>
+                            <Text style={styles.comingSoonTitle}>Playoffs</Text>
+                            <Text style={styles.comingSoonText}>
+                                No hay información de playoffs disponible para este torneo
+                            </Text>
+                        </View>
+                    )}
                 </View>
-                    </>
-                ) : (
-                    // Vista de Playoffs
-                    <>
-                        {playoffLoading ? (
-                            <LoadingSpinner message="Cargando playoffs..." />
-                        ) : playoffError ? (
-                            <View style={styles.errorContainer}>
-                                <Text style={styles.errorText}>{playoffError}</Text>
-                                <TouchableOpacity style={styles.retryButton} onPress={loadPlayoffs}>
-                                    <Text style={styles.retryButtonText}>Reintentar</Text>
-                                </TouchableOpacity>
-                            </View>
-                        ) : playoffData && playoffData.fases.length > 0 ? (
-                            <PlayoffBracket phases={playoffData.fases} />
-                        ) : (
-                            <View style={styles.comingSoonContainer}>
-                                <Text style={styles.comingSoonIcon}>🏆</Text>
-                                <Text style={styles.comingSoonTitle}>Playoffs</Text>
-                                <Text style={styles.comingSoonText}>
-                                    No hay información de playoffs disponible para este torneo
-                                </Text>
-                            </View>
-                        )}
-                    </>
-                )}
-            </ScrollView>
+            )}
         </View>
     );
 };
@@ -414,6 +413,9 @@ const styles = StyleSheet.create({
     },
     scrollContentContainer: {
         padding: theme.spacing.base,
+    },
+    playoffContent: {
+        flex: 1,
     },
     tableContainer: {
         backgroundColor: theme.colors.backgroundCard,

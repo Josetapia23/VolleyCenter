@@ -206,10 +206,14 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
       showsHorizontalScrollIndicator={true}
       contentContainerStyle={styles.scrollContent}
       style={styles.container}
+      scrollEventThrottle={16}
+      nestedScrollEnabled={true}
     >
       <ScrollView
         showsVerticalScrollIndicator={true}
         contentContainerStyle={styles.verticalContent}
+        scrollEventThrottle={16}
+        nestedScrollEnabled={true}
       >
         <View style={styles.bracketContainer}>
           {/* Bracket Izquierdo */}
