@@ -1,6 +1,6 @@
 // src/services/api.ts
 import axios from 'axios';
-import { Tournament, TournamentDetail, Match, ApiResponse, Team, StandingsResponse } from '../types/tournament';
+import { Tournament, TournamentDetail, Match, ApiResponse, Team, StandingsResponse, PlayoffResponse } from '../types/tournament';
 
 // Configuración base de la API
 const BASE_URL = 'http://10.9.223.159/volleycenter-api'; // Cambia por tu URL real
@@ -86,6 +86,21 @@ class TournamentService {
       return response.data.data;
     } catch (error) {
       console.error('Error fetching match detail:', error);
+      throw error;
+    }
+  }
+
+  // Obtener fases eliminatorias (playoffs) de un torneo
+  static async getTournamentPlayoffs(id: number, fase?: string, llave?: string): Promise<PlayoffResponse> {
+    try {
+      const params: Record<string, string> = {};
+      if (fase) params.fase = fase;
+      if (llave) params.llave = llave;
+
+      const response = await api.get<ApiResponse<PlayoffResponse>>(`/v1/tournaments/${id}/phases`, { params });
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching tournament playoffs:', error);
       throw error;
     }
   }

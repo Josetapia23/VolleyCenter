@@ -4,7 +4,8 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'rea
 import { Select, SelectOption, LoadingSpinner } from '../../../shared/components';
 import { theme } from '../../../shared/theme';
 import TournamentService from '../../../services/api';
-import { StandingsResponse, TeamStanding } from '../../../types/tournament';
+import { StandingsResponse, TeamStanding, StandingsGroup, PlayoffResponse } from '../../../types/tournament';
+import { PlayoffBracket } from '../components/PlayoffBracket';
 
 interface Props {
     tournamentId: number;
@@ -14,12 +15,21 @@ const StandingsTab: React.FC<Props> = ({ tournamentId }) => {
     const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
     const [activeView, setActiveView] = useState<'standings' | 'playoffs'>('standings');
     const [standingsData, setStandingsData] = useState<StandingsResponse | null>(null);
+    const [playoffData, setPlayoffData] = useState<PlayoffResponse | null>(null);
     const [loading, setLoading] = useState(true);
+    const [playoffLoading, setPlayoffLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [playoffError, setPlayoffError] = useState<string | null>(null);
 
     useEffect(() => {
         loadStandings();
     }, [tournamentId]);
+
+    useEffect(() => {
+        if (activeView === 'playoffs' && !playoffData) {
+            loadPlayoffs();
+        }
+    }, [activeView, tournamentId]);
 
     const loadStandings = async () => {
         try {
@@ -32,6 +42,20 @@ const StandingsTab: React.FC<Props> = ({ tournamentId }) => {
             setError('Error al cargar las posiciones');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadPlayoffs = async () => {
+        try {
+            setPlayoffLoading(true);
+            setPlayoffError(null);
+            const data = await TournamentService.getTournamentPlayoffs(tournamentId);
+            setPlayoffData(data);
+        } catch (err) {
+            console.error('Error loading playoffs:', err);
+            setPlayoffError('Error al cargar los playoffs');
+        } finally {
+            setPlayoffLoading(false);
         }
     };
 
@@ -308,14 +332,29 @@ const StandingsTab: React.FC<Props> = ({ tournamentId }) => {
                 </View>
                     </>
                 ) : (
-                    // TODO: Vista de Playoffs - Estará lista pronto
-                    <View style={styles.comingSoonContainer}>
-                        <Text style={styles.comingSoonIcon}>🏆</Text>
-                        <Text style={styles.comingSoonTitle}>Playoffs</Text>
-                        <Text style={styles.comingSoonText}>
-                            Esta sección estará disponible próximamente
-                        </Text>
-                    </View>
+                    // Vista de Playoffs
+                    <>
+                        {playoffLoading ? (
+                            <LoadingSpinner message="Cargando playoffs..." />
+                        ) : playoffError ? (
+                            <View style={styles.errorContainer}>
+                                <Text style={styles.errorText}>{playoffError}</Text>
+                                <TouchableOpacity style={styles.retryButton} onPress={loadPlayoffs}>
+                                    <Text style={styles.retryButtonText}>Reintentar</Text>
+                                </TouchableOpacity>
+                            </View>
+                        ) : playoffData && playoffData.fases.length > 0 ? (
+                            <PlayoffBracket phases={playoffData.fases} />
+                        ) : (
+                            <View style={styles.comingSoonContainer}>
+                                <Text style={styles.comingSoonIcon}>🏆</Text>
+                                <Text style={styles.comingSoonTitle}>Playoffs</Text>
+                                <Text style={styles.comingSoonText}>
+                                    No hay información de playoffs disponible para este torneo
+                                </Text>
+                            </View>
+                        )}
+                    </>
                 )}
             </ScrollView>
         </View>

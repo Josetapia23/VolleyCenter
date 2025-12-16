@@ -95,6 +95,36 @@ export interface MatchResult {
   set_2_equipo_2: number;
   set_3_equipo_1?: number;
   set_3_equipo_2?: number;
+  ganador?: number;
+}
+
+// Tipos para Playoffs/Fases Eliminatorias
+export interface PlayoffMatch {
+  id_fase: number | null;
+  id_cruce: number;
+  llave: string; // "Llave 1", "Llave 2", etc.
+  fecha: string;
+  ubicacion: string;
+  estado: 'programado' | 'en_curso' | 'finalizado';
+  equipo_1: Team;
+  equipo_2: Team;
+  resultado: MatchResult;
+}
+
+export interface PlayoffPhase {
+  nombre: string; // "Octavos de final", "Cuartos de final", "Semifinal", "Final"
+  orden: number;
+  cruces: PlayoffMatch[];
+}
+
+export interface PlayoffResponse {
+  torneo: {
+    id: number;
+    nombre: string;
+  };
+  fase_filtro: string | null;
+  llave_filtro: string | null;
+  fases: PlayoffPhase[];
 }
 
 // Tipos para las respuestas de la API
