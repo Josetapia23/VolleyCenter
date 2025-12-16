@@ -1,7 +1,8 @@
 // src/features/tournaments/components/PlayoffBracket.tsx
 import React from 'react';
-import { View, Text, StyleSheet, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import { PlayoffPhase, PlayoffMatch } from '../../../types/tournament';
+import { theme } from '../../../shared/theme';
 
 interface PlayoffBracketProps {
   phases: PlayoffPhase[];
@@ -191,8 +192,265 @@ const styles = StyleSheet.create({
   verticalScroll: {
     flex: 1,
   },
-  verticalContent: {
-    paddingVertical: 20,
+  bracketContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 500,
+  },
+  phaseColumn: {
+    minWidth: 240,
+  },
+  phaseHeader: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: theme.spacing.sm + 2,
+    paddingHorizontal: theme.spacing.base,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.base,
+    alignItems: 'center',
+  },
+  phaseTitle: {
+    fontSize: theme.typography.fontSize.sm,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.textInverse,
+    letterSpacing: 1,
+  },
+  matchesContainer: {
+    gap: theme.spacing.xl + theme.spacing.lg,
+    justifyContent: 'center',
+  },
+  matchCard: {
+    backgroundColor: theme.colors.backgroundCard,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    overflow: 'hidden',
+    ...theme.getCardShadow('sm'),
+    minWidth: 220,
+  },
+  teamRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: theme.spacing.sm + 2,
+    paddingHorizontal: theme.spacing.md,
+    backgroundColor: theme.colors.gray50,
+  },
+  winnerRow: {
+    backgroundColor: '#DBEAFE',
+  },
+  teamInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: theme.spacing.sm,
+  },
+  teamLogo: {
+    width: 28,
+    height: 28,
+    borderRadius: theme.borderRadius.full,
+    marginRight: theme.spacing.sm,
+  },
+  teamLogoPlaceholder: {
+    backgroundColor: theme.colors.gray300,
+  },
+  teamName: {
+    fontSize: theme.typography.fontSize.sm,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.textSecondary,
+    flex: 1,
+  },
+  winnerTeamName: {
+    color: theme.colors.primary,
+    fontWeight: theme.typography.fontWeight.bold,
+  },
+  scoreBox: {
+    width: 32,
+    height: 32,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.gray200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.gray300,
+  },
+  winnerScoreBox: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  scoreText: {
+    fontSize: theme.typography.fontSize.sm,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.textSecondary,
+  },
+  winnerScoreText: {
+    color: theme.colors.textInverse,
+  },
+  matchDivider: {
+    height: 1,
+    backgroundColor: theme.colors.border,
+  },
+  phaseConnector: {
+    width: 32,
+    height: 2,
+    backgroundColor: theme.colors.border,
+    marginHorizontal: theme.spacing.sm,
+  },
+  // Estilos de la FINAL
+  finalColumn: {
+    minWidth: 300,
+    marginHorizontal: theme.spacing.lg,
+  },
+  finalHeader: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.borderRadius.lg,
+    marginBottom: theme.spacing.base,
+    alignItems: 'center',
+    ...theme.getCardShadow('lg'),
+  },
+  finalTitle: {
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: theme.typography.fontWeight.black,
+    color: theme.colors.textInverse,
+    letterSpacing: 2,
+  },
+  finalMatchContainer: {
+    justifyContent: 'center',
+  },
+  finalCard: {
+    backgroundColor: theme.colors.backgroundCard,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 2,
+    borderColor: theme.colors.primary + '50',
+    overflow: 'hidden',
+    ...theme.getCardShadow('xl'),
+  },
+  finalTeamRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.base,
+    backgroundColor: theme.colors.gray50,
+  },
+  finalWinnerRow: {
+    backgroundColor: '#DBEAFE',
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+    borderRightWidth: 0,
+    borderLeftWidth: 0,
+    borderBottomWidth: 0,
+  },
+  finalTeamInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: theme.spacing.md,
+  },
+  finalTeamLogo: {
+    width: 36,
+    height: 36,
+    borderRadius: theme.borderRadius.full,
+    marginRight: theme.spacing.md,
+  },
+  finalTeamName: {
+    fontSize: theme.typography.fontSize.base,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.textSecondary,
+    flex: 1,
+  },
+  finalWinnerTeamName: {
+    color: theme.colors.textPrimary,
+    fontWeight: theme.typography.fontWeight.black,
+  },
+  finalScoreBox: {
+    width: 40,
+    height: 40,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.gray200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.gray300,
+  },
+  finalWinnerScoreBox: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  finalScoreText: {
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: theme.typography.fontWeight.black,
+    color: theme.colors.textSecondary,
+  },
+  finalWinnerScoreText: {
+    color: theme.colors.textInverse,
+  },
+  finalDivider: {
+    height: 2,
+    backgroundColor: theme.colors.border,
+  },
+  championSection: {
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.base,
+    paddingHorizontal: theme.spacing.base,
+  },
+  championDivider: {
+    height: 1,
+    backgroundColor: theme.colors.border,
+    marginBottom: theme.spacing.md,
+  },
+  championLabel: {
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.textTertiary,
+    textAlign: 'center',
+    fontWeight: theme.typography.fontWeight.semibold,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: theme.spacing.xs,
+  },
+  championInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  championTrophy: {
+    fontSize: 20,
+    marginRight: theme.spacing.sm,
+  },
+  championName: {
+    fontSize: theme.typography.fontSize.base,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.primary,
+    flex: 1,
+    textAlign: 'center',
+  },
+  progressIndicator: {
+    position: 'absolute',
+    bottom: theme.spacing.lg,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    backgroundColor: theme.colors.backgroundCard + 'E6',
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.base,
+    marginHorizontal: theme.spacing.xl * 2,
+    borderRadius: theme.borderRadius.full,
+    ...theme.getCardShadow('lg'),
+  },
+  pulseIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.primary,
+    marginRight: theme.spacing.sm,
+  },
+  progressText: {
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.textTertiary,
+    fontWeight: theme.typography.fontWeight.medium,
   },
   emptyContainer: {
     flex: 1,
@@ -201,8 +459,8 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyText: {
-    fontSize: 16,
-    color: '#9CA3AF',
+    fontSize: theme.typography.fontSize.base,
+    color: theme.colors.textTertiary,
     textAlign: 'center',
   },
   bracketContainer: {
