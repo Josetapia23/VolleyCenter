@@ -9,19 +9,16 @@ interface PlayoffBracketProps {
 }
 
 export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchPress }) => {
-  // Ordenar fases por orden (ascendente)
+  // Ordenar fases por orden (ascendente: octavos, cuartos, semis, final)
   const sortedPhases = [...phases].sort((a, b) => a.orden - b.orden);
 
-  // Agrupar partidos por llave dentro de cada fase
-  const getMatchesByKey = (matches: PlayoffMatch[]) => {
-    const grouped: Record<string, PlayoffMatch[]> = {};
-    matches.forEach(match => {
-      if (!grouped[match.llave]) {
-        grouped[match.llave] = [];
-      }
-      grouped[match.llave].push(match);
-    });
-    return grouped;
+  // Función para dividir partidos en dos mitades (bracket superior e inferior)
+  const splitMatches = (matches: PlayoffMatch[]) => {
+    const half = Math.ceil(matches.length / 2);
+    return {
+      upper: matches.slice(0, half),
+      lower: matches.slice(half),
+    };
   };
 
   const renderTeam = (
@@ -75,38 +72,116 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
     );
   };
 
-  const renderPhase = (phase: PlayoffPhase, isLast: boolean) => {
-    const matchesByKey = getMatchesByKey(phase.cruces);
-    const keys = Object.keys(matchesByKey).sort();
-
+  // Renderizar una columna de fase (para bracket izquierdo o derecho)
+  const renderPhaseColumn = (
+    phase: PlayoffPhase,
+    matches: PlayoffMatch[],
+    position: 'left' | 'right' | 'center',
+    showConnector: boolean = false
+  ) => {
     return (
-      <View key={phase.nombre} style={styles.phaseColumn}>
+      <View style={styles.phaseColumn}>
         {/* Título de la fase */}
         <View style={styles.phaseHeader}>
           <Text style={styles.phaseTitle}>{phase.nombre}</Text>
         </View>
 
-        {/* Contenedor de llaves */}
-        <View style={styles.keysContainer}>
-          {keys.map((keyName, keyIndex) => (
-            <View key={keyName} style={styles.keySection}>
-              {/* Título de la llave (solo si hay más de una llave) */}
-              {keys.length > 1 && (
-                <Text style={styles.keyTitle}>{keyName}</Text>
-              )}
+        {/* Partidos */}
+        <View style={styles.matchesColumn}>
+          {matches.map((match, index) => (
+            <View key={match.id_cruce} style={styles.matchWrapper}>
+              {renderMatch(match)}
 
-              {/* Partidos de esta llave */}
-              <View style={styles.matchesColumn}>
-                {matchesByKey[keyName].map((match) => renderMatch(match))}
-              </View>
+              {/* Conector hacia la siguiente fase */}
+              {showConnector && (
+                <View
+                  style={[
+                    styles.phaseConnector,
+                    position === 'left' && styles.connectorRight,
+                    position === 'right' && styles.connectorLeft,
+                  ]}
+                />
+              )}
             </View>
           ))}
         </View>
-
-        {/* Conectores hacia la siguiente fase */}
-        {!isLast && <View style={styles.connector} />}
       </View>
     );
+  };
+
+  // Renderizar conectores entre fases
+  const renderConnector = (
+    fromMatches: number,
+    toMatches: number,
+    position: 'left' | 'right'
+  ) => {
+    const connectors = [];
+    const verticalGap = 120; // Espacio vertical entre partidos
+
+    for (let i = 0; i < toMatches; i++) {
+      const fromIndex1 = i * 2;
+      const fromIndex2 = i * 2 + 1;
+      const toIndex = i;
+
+      // Calcular posiciones verticales
+      const fromY1 = fromIndex1 * verticalGap + 60; // Centro del primer partido de origen
+      const fromY2 = fromIndex2 * verticalGap + 60; // Centro del segundo partido de origen
+      const toY = toIndex * (verticalGap * 2) + 120; // Centro del partido de destino
+
+      connectors.push(
+        <View key={`connector-${i}`} style={styles.connectorGroup}>
+          {/* Línea horizontal desde el primer partido */}
+          <View
+            style={[
+              styles.horizontalLine,
+              {
+                top: fromY1,
+                [position === 'left' ? 'left' : 'right']: 280,
+                width: 30,
+              },
+            ]}
+          />
+
+          {/* Línea vertical conectando ambos partidos */}
+          <View
+            style={[
+              styles.verticalLine,
+              {
+                top: fromY1,
+                height: fromY2 - fromY1,
+                [position === 'left' ? 'left' : 'right']: 310,
+              },
+            ]}
+          />
+
+          {/* Línea horizontal desde el segundo partido */}
+          <View
+            style={[
+              styles.horizontalLine,
+              {
+                top: fromY2,
+                [position === 'left' ? 'left' : 'right']: 280,
+                width: 30,
+              },
+            ]}
+          />
+
+          {/* Línea horizontal hacia el partido de destino */}
+          <View
+            style={[
+              styles.horizontalLine,
+              {
+                top: toY,
+                [position === 'left' ? 'left' : 'right']: 310,
+                width: 30,
+              },
+            ]}
+          />
+        </View>
+      );
+    }
+
+    return <View style={styles.connectorsContainer}>{connectors}</View>;
   };
 
   if (sortedPhases.length === 0) {
@@ -117,16 +192,58 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
     );
   }
 
+  // Separar la final del resto de fases
+  const finalPhase = sortedPhases[sortedPhases.length - 1];
+  const otherPhases = sortedPhases.slice(0, -1);
+
+  // Invertir el orden para mostrar de más lejano a más cercano
+  const leftPhases = [...otherPhases].reverse();
+  const rightPhases = [...otherPhases].reverse();
+
   return (
     <ScrollView
       horizontal
-      showsHorizontalScrollIndicator={false}
+      showsHorizontalScrollIndicator={true}
       contentContainerStyle={styles.scrollContent}
       style={styles.container}
     >
-      {sortedPhases.map((phase, index) =>
-        renderPhase(phase, index === sortedPhases.length - 1)
-      )}
+      <ScrollView
+        showsVerticalScrollIndicator={true}
+        contentContainerStyle={styles.verticalContent}
+      >
+        <View style={styles.bracketContainer}>
+          {/* Bracket Izquierdo */}
+          <View style={styles.leftBracket}>
+            {leftPhases.map((phase, index) => {
+              const { upper } = splitMatches(phase.cruces);
+              const hasNextPhase = index < leftPhases.length - 1;
+              return (
+                <View key={`left-${phase.nombre}`} style={styles.phaseWrapper}>
+                  {renderPhaseColumn(phase, upper, 'left', hasNextPhase)}
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Final (Centro) */}
+          <View style={styles.centerBracket}>
+            {renderPhaseColumn(finalPhase, finalPhase.cruces, 'center', false)}
+          </View>
+
+          {/* Bracket Derecho */}
+          <View style={styles.rightBracket}>
+            {rightPhases.map((phase, index) => {
+              const { lower } = splitMatches(phase.cruces);
+              const hasNextPhase = index < rightPhases.length - 1;
+              return (
+                <View key={`right-${phase.nombre}`} style={styles.phaseWrapper}>
+                  {renderPhaseColumn(phase, lower, 'right', hasNextPhase)}
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      </ScrollView>
     </ScrollView>
   );
 };
@@ -137,9 +254,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   scrollContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 20,
-    flexDirection: 'row',
+  },
+  verticalContent: {
+    paddingVertical: 20,
   },
   emptyContainer: {
     flex: 1,
@@ -152,9 +271,29 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     textAlign: 'center',
   },
+  bracketContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 600,
+  },
+  leftBracket: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  centerBracket: {
+    marginHorizontal: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rightBracket: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  phaseWrapper: {
+    marginHorizontal: 20,
+  },
   phaseColumn: {
     flexDirection: 'column',
-    marginRight: 20,
     minWidth: 280,
   },
   phaseHeader: {
@@ -172,22 +311,11 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  keysContainer: {
-    flex: 1,
-    gap: 24,
-  },
-  keySection: {
-    gap: 12,
-  },
-  keyTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6B7280',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
   matchesColumn: {
-    gap: 16,
+    gap: 80,
+  },
+  matchWrapper: {
+    position: 'relative',
   },
   matchCard: {
     backgroundColor: '#FFFFFF',
@@ -200,6 +328,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 3,
+    width: 280,
   },
   teamContainer: {
     flexDirection: 'row',
@@ -259,12 +388,40 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#E5E7EB',
   },
-  connector: {
+  // Estilos para conectores de fase
+  phaseConnector: {
     position: 'absolute',
-    right: -20,
     top: '50%',
-    width: 20,
     height: 2,
+    backgroundColor: '#D1D5DB',
+    width: 40,
+    marginTop: -1,
+  },
+  connectorRight: {
+    right: -40,
+  },
+  connectorLeft: {
+    left: -40,
+  },
+  // Estilos para conectores (función renderConnector - no usado actualmente)
+  connectorsContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  connectorGroup: {
+    position: 'absolute',
+  },
+  horizontalLine: {
+    position: 'absolute',
+    height: 2,
+    backgroundColor: '#D1D5DB',
+  },
+  verticalLine: {
+    position: 'absolute',
+    width: 2,
     backgroundColor: '#D1D5DB',
   },
 });
