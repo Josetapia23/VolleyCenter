@@ -1,5 +1,5 @@
 // src/features/tournaments/components/PlayoffBracket.tsx
-import React, { useMemo } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import { PlayoffPhase, PlayoffMatch } from '../../../types/tournament';
 import { theme } from '../../../shared/theme';
@@ -43,8 +43,18 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
     };
   });
 
+  // Generar fases faltantes (Cuartos, Semifinal, Final) basadas en los ganadores
+  let allPhases = phasesWithKey1Only;
+  if (hasMissingPhases(phasesWithKey1Only)) {
+    console.log('⚠️ Faltan fases, generando automáticamente...');
+    allPhases = generateMissingPhases(phasesWithKey1Only);
+    console.log('✅ Fases generadas:', allPhases.map(p => p.nombre).join(', '));
+  } else {
+    console.log('✅ Todas las fases ya están presentes');
+  }
+
   // Separar la fase final del resto
-  const finalPhaseIndex = phasesWithKey1Only.findIndex(p => {
+  const finalPhaseIndex = allPhases.findIndex(p => {
     const nombre = p.nombre.toLowerCase();
     return (
       nombre.includes('final') &&
@@ -54,8 +64,8 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
     );
   });
 
-  const finalPhase = finalPhaseIndex >= 0 ? phasesWithKey1Only[finalPhaseIndex] : null;
-  const otherPhases = phasesWithKey1Only.filter((_, index) => index !== finalPhaseIndex);
+  const finalPhase = finalPhaseIndex >= 0 ? allPhases[finalPhaseIndex] : null;
+  const otherPhases = allPhases.filter((_, index) => index !== finalPhaseIndex);
 
   console.log('Final:', finalPhase?.nombre || 'NO HAY');
   console.log('Otras fases:', otherPhases.map(p => p.nombre));
