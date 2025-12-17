@@ -50,6 +50,11 @@ const StandingsTab: React.FC<Props> = ({ tournamentId }) => {
             setPlayoffLoading(true);
             setPlayoffError(null);
             const data = await TournamentService.getTournamentPlayoffs(tournamentId);
+            console.log('=== DATOS DE PLAYOFFS ===');
+            console.log('Total fases recibidas:', data.fases.length);
+            data.fases.forEach(fase => {
+                console.log(`Fase: ${fase.nombre}, Orden: ${fase.orden}, Cruces: ${fase.cruces.length}`);
+            });
             setPlayoffData(data);
         } catch (err) {
             console.error('Error loading playoffs:', err);
