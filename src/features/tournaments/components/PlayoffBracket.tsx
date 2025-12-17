@@ -1,8 +1,9 @@
 // src/features/tournaments/components/PlayoffBracket.tsx
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import { PlayoffPhase, PlayoffMatch } from '../../../types/tournament';
 import { theme } from '../../../shared/theme';
+import { generateMissingPhases, hasMissingPhases } from '../utils/playoffGenerator';
 
 interface PlayoffBracketProps {
   phases: PlayoffPhase[];
@@ -13,7 +14,7 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
   // Ordenar fases por orden (ascendente: octavos, cuartos, semis, final)
   const sortedPhases = [...phases].sort((a, b) => a.orden - b.orden);
 
-  console.log('=== PLAYOFF BRACKET V3 ===');
+  console.log('=== PLAYOFF BRACKET V4 - LLAVE 1 ONLY ===');
   console.log('Total fases:', sortedPhases.length);
 
   if (sortedPhases.length === 0) {
@@ -24,41 +25,23 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
     );
   }
 
-  // Buscar la fase final (excluyendo octavos, cuartos, etc.)
-  const finalPhase = sortedPhases.find(p => {
-    const nombre = p.nombre.toLowerCase();
-    return (
-      nombre.includes('final') &&
-      !nombre.includes('semifinal') &&
-      !nombre.includes('octavos') &&
-      !nombre.includes('cuartos')
-    );
-  });
+  // Filtrar solo los partidos de la llave 1 en cada fase
+  const phasesWithKey1Only = sortedPhases.map(phase => {
+    // Obtener todas las llaves únicas
+    const llaves = Array.from(new Set(phase.cruces.map(m => m.llave))).sort();
+    console.log(`Fase: ${phase.nombre}, Llaves disponibles: ${llaves.join(', ')}`);
 
-  // El resto de fases van en los lados
-  const otherPhases = sortedPhases.filter(p => p !== finalPhase);
+    // Usar la primera llave (llave 1)
+    const llave1 = llaves[0];
+    const matchesLlave1 = phase.cruces.filter(m => m.llave === llave1);
 
-  console.log('Final:', finalPhase?.nombre || 'NO HAY');
-  console.log('Otras fases:', otherPhases.map(p => p.nombre));
+    console.log(`Usando llave: ${llave1}, Partidos: ${matchesLlave1.length}`);
 
-  // Dividir partidos por llave
-  const splitByKey = (matches: PlayoffMatch[]) => {
-    const llaves = Array.from(new Set(matches.map(m => m.llave))).sort();
-
-    if (llaves.length === 2) {
-      const left = matches.filter(m => m.llave === llaves[0]);
-      const right = matches.filter(m => m.llave === llaves[1]);
-      console.log(`División: ${llaves[0]}=${left.length}, ${llaves[1]}=${right.length}`);
-      return { left, right };
-    }
-
-    // Fallback
-    const half = Math.ceil(matches.length / 2);
     return {
-      left: matches.slice(0, half),
-      right: matches.slice(half),
+      ...phase,
+      cruces: matchesLlave1
     };
-  };
+  });
 
   // Renderizar un partido
   const renderMatch = (match: PlayoffMatch) => {
@@ -99,29 +82,34 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
   };
 
   // Renderizar una columna de fase
-  const renderRoundColumn = (title: string, matches: PlayoffMatch[], isFinal: boolean = false) => {
-    console.log(`Renderizando columna: ${title}, partidos: ${matches.length}, isFinal: ${isFinal}`);
+  const renderRoundColumn = (phase: PlayoffPhase, index: number) => {
+    const isFinal = phase.nombre.toLowerCase().includes('final') &&
+                    !phase.nombre.toLowerCase().includes('semifinal') &&
+                    !phase.nombre.toLowerCase().includes('octavos') &&
+                    !phase.nombre.toLowerCase().includes('cuartos');
+
+    console.log(`Renderizando columna: ${phase.nombre}, partidos: ${phase.cruces.length}, isFinal: ${isFinal}`);
 
     return (
-      <View style={[styles.roundColumn, isFinal && styles.finalColumn]}>
+      <View key={`phase-${index}`} style={[styles.roundColumn, isFinal && styles.finalColumn]}>
         {/* Título */}
         <View style={[styles.roundHeader, isFinal && styles.finalHeader]}>
           <Text style={[styles.roundTitle, isFinal && styles.finalTitle]}>
-            {isFinal ? '🏆 ' : ''}{title}
+            {isFinal ? '🏆 ' : ''}{phase.nombre}
           </Text>
         </View>
 
         {/* Partidos */}
         <View style={styles.matchesContainer}>
-          {matches.map((match) => renderMatch(match))}
+          {phase.cruces.map((match) => renderMatch(match))}
         </View>
       </View>
     );
   };
 
   // Renderizar conector visual
-  const renderConnector = () => (
-    <View style={styles.connector}>
+  const renderConnector = (index: number) => (
+    <View key={`connector-${index}`} style={styles.connector}>
       <View style={styles.connectorLine} />
     </View>
   );
@@ -141,35 +129,13 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
           nestedScrollEnabled={true}
         >
           <View style={styles.bracketContainer}>
-            {/* LADO IZQUIERDO */}
-            {otherPhases.map((phase) => {
-              const { left } = splitByKey(phase.cruces);
-              return (
-                <React.Fragment key={`left-${phase.nombre}`}>
-                  {renderRoundColumn(phase.nombre, left)}
-                  {renderConnector()}
-                </React.Fragment>
-              );
-            })}
-
-            {/* FINAL EN EL CENTRO */}
-            {finalPhase && (
-              <>
-                {renderRoundColumn(finalPhase.nombre, finalPhase.cruces, true)}
-                {renderConnector()}
-              </>
-            )}
-
-            {/* LADO DERECHO (orden inverso) */}
-            {[...otherPhases].reverse().map((phase, index) => {
-              const { right } = splitByKey(phase.cruces);
-              return (
-                <React.Fragment key={`right-${phase.nombre}`}>
-                  {renderRoundColumn(phase.nombre, right)}
-                  {index < otherPhases.length - 1 && renderConnector()}
-                </React.Fragment>
-              );
-            })}
+            {/* BRACKET LINEAL: Octavos -> Cuartos -> Semifinal -> Final */}
+            {phasesWithKey1Only.map((phase, index) => (
+              <React.Fragment key={`phase-fragment-${index}`}>
+                {renderRoundColumn(phase, index)}
+                {index < phasesWithKey1Only.length - 1 && renderConnector(index)}
+              </React.Fragment>
+            ))}
           </View>
         </ScrollView>
       </ScrollView>
