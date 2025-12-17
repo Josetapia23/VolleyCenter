@@ -14,7 +14,7 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
   // Ordenar fases por orden (ascendente: octavos, cuartos, semis, final)
   const sortedPhases = [...phases].sort((a, b) => a.orden - b.orden);
 
-  console.log('=== PLAYOFF BRACKET V4 - LLAVE 1 ONLY ===');
+  console.log('=== PLAYOFF BRACKET V5 - DISEÑO SIMÉTRICO ===');
   console.log('Total fases:', sortedPhases.length);
 
   if (sortedPhases.length === 0) {
@@ -42,6 +42,32 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
       cruces: matchesLlave1
     };
   });
+
+  // Separar la fase final del resto
+  const finalPhaseIndex = phasesWithKey1Only.findIndex(p => {
+    const nombre = p.nombre.toLowerCase();
+    return (
+      nombre.includes('final') &&
+      !nombre.includes('semifinal') &&
+      !nombre.includes('octavos') &&
+      !nombre.includes('cuartos')
+    );
+  });
+
+  const finalPhase = finalPhaseIndex >= 0 ? phasesWithKey1Only[finalPhaseIndex] : null;
+  const otherPhases = phasesWithKey1Only.filter((_, index) => index !== finalPhaseIndex);
+
+  console.log('Final:', finalPhase?.nombre || 'NO HAY');
+  console.log('Otras fases:', otherPhases.map(p => p.nombre));
+
+  // Función para dividir partidos en dos mitades
+  const splitMatches = (matches: PlayoffMatch[]) => {
+    const half = Math.ceil(matches.length / 2);
+    return {
+      left: matches.slice(0, half),
+      right: matches.slice(half)
+    };
+  };
 
   // Renderizar un partido
   const renderMatch = (match: PlayoffMatch) => {
@@ -81,41 +107,99 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
     );
   };
 
-  // Renderizar una columna de fase
-  const renderRoundColumn = (phase: PlayoffPhase, index: number) => {
-    const isFinal = phase.nombre.toLowerCase().includes('final') &&
-                    !phase.nombre.toLowerCase().includes('semifinal') &&
-                    !phase.nombre.toLowerCase().includes('octavos') &&
-                    !phase.nombre.toLowerCase().includes('cuartos');
-
-    console.log(`Renderizando columna: ${phase.nombre}, partidos: ${phase.cruces.length}, isFinal: ${isFinal}`);
-
+  // Renderizar una columna de fase (con partidos)
+  const renderRoundColumn = (title: string, matches: PlayoffMatch[], key: string) => {
     return (
-      <View key={`phase-${index}`} style={[styles.roundColumn, isFinal && styles.finalColumn]}>
+      <View key={key} style={styles.roundColumn}>
         {/* Título */}
-        <View style={[styles.roundHeader, isFinal && styles.finalHeader]}>
-          <Text style={[styles.roundTitle, isFinal && styles.finalTitle]}>
-            {isFinal ? '🏆 ' : ''}{phase.nombre}
-          </Text>
+        <View style={styles.roundHeader}>
+          <Text style={styles.roundTitle}>{title}</Text>
         </View>
 
         {/* Partidos */}
         <View style={styles.matchesContainer}>
-          {phase.cruces.map((match) => renderMatch(match))}
+          {matches.map((match) => renderMatch(match))}
+        </View>
+      </View>
+    );
+  };
+
+  // Renderizar la final (destacada)
+  const renderFinalColumn = () => {
+    if (!finalPhase || finalPhase.cruces.length === 0) return null;
+
+    const match = finalPhase.cruces[0];
+    const isWinner1 = match.resultado?.ganador === match.equipo_1.id;
+    const isWinner2 = match.resultado?.ganador === match.equipo_2.id;
+    const champion = isWinner1 ? match.equipo_1.nombre : isWinner2 ? match.equipo_2.nombre : null;
+
+    return (
+      <View style={styles.finalColumn}>
+        {/* Título Final */}
+        <View style={styles.finalHeader}>
+          <Text style={styles.finalTitle}>🏆 FINAL</Text>
+        </View>
+
+        {/* Partido Final */}
+        <View style={styles.matchesContainer}>
+          <View style={styles.finalMatchCard}>
+            {/* Equipo 1 */}
+            <View style={[styles.finalTeamRow, isWinner1 && styles.finalWinnerRow]}>
+              <Image source={{ uri: match.equipo_1.logo }} style={styles.finalTeamLogo} />
+              <Text style={[styles.finalTeamName, isWinner1 && styles.finalWinnerText]} numberOfLines={1}>
+                {match.equipo_1.nombre}
+              </Text>
+              <View style={[styles.finalScoreBox, isWinner1 && styles.finalWinnerScore]}>
+                <Text style={[styles.finalScoreText, isWinner1 && styles.finalWinnerScoreText]}>
+                  {match.resultado?.sets_equipo_1 ?? 0}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.finalDivider} />
+
+            {/* Equipo 2 */}
+            <View style={[styles.finalTeamRow, isWinner2 && styles.finalWinnerRow]}>
+              <Image source={{ uri: match.equipo_2.logo }} style={styles.finalTeamLogo} />
+              <Text style={[styles.finalTeamName, isWinner2 && styles.finalWinnerText]} numberOfLines={1}>
+                {match.equipo_2.nombre}
+              </Text>
+              <View style={[styles.finalScoreBox, isWinner2 && styles.finalWinnerScore]}>
+                <Text style={[styles.finalScoreText, isWinner2 && styles.finalWinnerScoreText]}>
+                  {match.resultado?.sets_equipo_2 ?? 0}
+                </Text>
+              </View>
+            </View>
+
+            {/* Campeón */}
+            {champion && (
+              <View style={styles.championSection}>
+                <View style={styles.championDivider} />
+                <Text style={styles.championLabel}>CAMPEÓN</Text>
+                <Text style={styles.championName}>🏆 {champion}</Text>
+              </View>
+            )}
+          </View>
         </View>
       </View>
     );
   };
 
   // Renderizar conector visual
-  const renderConnector = (index: number) => (
-    <View key={`connector-${index}`} style={styles.connector}>
+  const renderConnector = (key: string) => (
+    <View key={key} style={styles.connector}>
       <View style={styles.connectorLine} />
     </View>
   );
 
   return (
     <View style={styles.container}>
+      {/* Header informativo */}
+      <View style={styles.infoHeader}>
+        <Text style={styles.infoTitle}>Playoffs 2024 - Llave 1</Text>
+        <Text style={styles.infoSubtitle}>Desliza horizontalmente para ver todas las rondas</Text>
+      </View>
+
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={true}
@@ -129,20 +213,40 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
           nestedScrollEnabled={true}
         >
           <View style={styles.bracketContainer}>
-            {/* BRACKET LINEAL: Octavos -> Cuartos -> Semifinal -> Final */}
-            {phasesWithKey1Only.map((phase, index) => (
-              <React.Fragment key={`phase-fragment-${index}`}>
-                {renderRoundColumn(phase, index)}
-                {index < phasesWithKey1Only.length - 1 && renderConnector(index)}
-              </React.Fragment>
-            ))}
+            {/* LADO IZQUIERDO: Octavos -> Cuartos -> Semis */}
+            {otherPhases.map((phase, index) => {
+              const { left } = splitMatches(phase.cruces);
+              return (
+                <React.Fragment key={`left-${phase.nombre}-${index}`}>
+                  {renderRoundColumn(phase.nombre, left, `left-col-${index}`)}
+                  {renderConnector(`left-conn-${index}`)}
+                </React.Fragment>
+              );
+            })}
+
+            {/* CENTRO: FINAL */}
+            {renderFinalColumn()}
+
+            {/* LADO DERECHO: Semis -> Cuartos -> Octavos (orden inverso) */}
+            {[...otherPhases].reverse().map((phase, index) => {
+              const { right } = splitMatches(phase.cruces);
+              return (
+                <React.Fragment key={`right-${phase.nombre}-${index}`}>
+                  {renderConnector(`right-conn-${index}`)}
+                  {renderRoundColumn(phase.nombre, right, `right-col-${index}`)}
+                </React.Fragment>
+              );
+            })}
           </View>
         </ScrollView>
       </ScrollView>
 
       {/* Hint de scroll */}
       <View style={styles.scrollHint}>
-        <Text style={styles.scrollHintText}>← Desliza horizontalmente →</Text>
+        <View style={styles.scrollHintContent}>
+          <View style={styles.pulseIndicator} />
+          <Text style={styles.scrollHintText}>Desliza horizontalmente</Text>
+        </View>
       </View>
     </View>
   );
@@ -153,298 +257,48 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F9FAFB',
   },
+  infoHeader: {
+    backgroundColor: theme.colors.backgroundCard,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.base,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    ...theme.getCardShadow('sm'),
+  },
+  infoTitle: {
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.textPrimary,
+    textAlign: 'center',
+  },
+  infoSubtitle: {
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.textTertiary,
+    textAlign: 'center',
+    marginTop: theme.spacing.xs,
+  },
   horizontalScroll: {
     flex: 1,
   },
   horizontalContent: {
     paddingHorizontal: 20,
-    paddingBottom: 50, // Espacio para el hint
+    paddingVertical: 20,
   },
   verticalScroll: {
     flex: 1,
+  },
+  verticalContent: {
+    paddingBottom: 20,
   },
   bracketContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: 500,
-  },
-  phaseColumn: {
-    minWidth: 240,
-  },
-  phaseHeader: {
-    backgroundColor: theme.colors.primary,
-    paddingVertical: theme.spacing.sm + 2,
-    paddingHorizontal: theme.spacing.base,
-    borderRadius: theme.borderRadius.md,
-    marginBottom: theme.spacing.base,
-    alignItems: 'center',
-  },
-  phaseTitle: {
-    fontSize: theme.typography.fontSize.sm,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.textInverse,
-    letterSpacing: 1,
-  },
-  matchesContainer: {
-    gap: theme.spacing.xl + theme.spacing.lg,
-    justifyContent: 'center',
-  },
-  matchCard: {
-    backgroundColor: theme.colors.backgroundCard,
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: 2,
-    borderColor: theme.colors.border,
-    overflow: 'hidden',
-    ...theme.getCardShadow('sm'),
-    minWidth: 220,
-  },
-  teamRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: theme.spacing.sm + 2,
-    paddingHorizontal: theme.spacing.md,
-    backgroundColor: theme.colors.gray50,
-  },
-  winnerRow: {
-    backgroundColor: '#DBEAFE',
-  },
-  teamInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginRight: theme.spacing.sm,
-  },
-  teamLogo: {
-    width: 28,
-    height: 28,
-    borderRadius: theme.borderRadius.full,
-    marginRight: theme.spacing.sm,
-  },
-  teamLogoPlaceholder: {
-    backgroundColor: theme.colors.gray300,
-  },
-  teamName: {
-    fontSize: theme.typography.fontSize.sm,
-    fontWeight: theme.typography.fontWeight.semibold,
-    color: theme.colors.textSecondary,
-    flex: 1,
-  },
-  winnerTeamName: {
-    color: theme.colors.primary,
-    fontWeight: theme.typography.fontWeight.bold,
-  },
-  scoreBox: {
-    width: 32,
-    height: 32,
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.gray200,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.gray300,
-  },
-  winnerScoreBox: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  scoreText: {
-    fontSize: theme.typography.fontSize.sm,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.textSecondary,
-  },
-  winnerScoreText: {
-    color: theme.colors.textInverse,
-  },
-  matchDivider: {
-    height: 1,
-    backgroundColor: theme.colors.border,
-  },
-  phaseConnector: {
-    width: 32,
-    height: 2,
-    backgroundColor: theme.colors.border,
-    marginHorizontal: theme.spacing.sm,
-  },
-  // Estilos de la FINAL
-  finalColumn: {
-    minWidth: 300,
-    marginHorizontal: theme.spacing.lg,
-  },
-  finalHeader: {
-    backgroundColor: theme.colors.primary,
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-    borderRadius: theme.borderRadius.lg,
-    marginBottom: theme.spacing.base,
-    alignItems: 'center',
-    ...theme.getCardShadow('lg'),
-  },
-  finalTitle: {
-    fontSize: theme.typography.fontSize.lg,
-    fontWeight: theme.typography.fontWeight.black,
-    color: theme.colors.textInverse,
-    letterSpacing: 2,
-  },
-  finalMatchContainer: {
-    justifyContent: 'center',
-  },
-  finalCard: {
-    backgroundColor: theme.colors.backgroundCard,
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: 2,
-    borderColor: theme.colors.primary + '50',
-    overflow: 'hidden',
-    ...theme.getCardShadow('xl'),
-  },
-  finalTeamRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.base,
-    backgroundColor: theme.colors.gray50,
-  },
-  finalWinnerRow: {
-    backgroundColor: '#DBEAFE',
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
-    borderRightWidth: 0,
-    borderLeftWidth: 0,
-    borderBottomWidth: 0,
-  },
-  finalTeamInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginRight: theme.spacing.md,
-  },
-  finalTeamLogo: {
-    width: 36,
-    height: 36,
-    borderRadius: theme.borderRadius.full,
-    marginRight: theme.spacing.md,
-  },
-  finalTeamName: {
-    fontSize: theme.typography.fontSize.base,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.textSecondary,
-    flex: 1,
-  },
-  finalWinnerTeamName: {
-    color: theme.colors.textPrimary,
-    fontWeight: theme.typography.fontWeight.black,
-  },
-  finalScoreBox: {
-    width: 40,
-    height: 40,
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.gray200,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.gray300,
-  },
-  finalWinnerScoreBox: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  finalScoreText: {
-    fontSize: theme.typography.fontSize.lg,
-    fontWeight: theme.typography.fontWeight.black,
-    color: theme.colors.textSecondary,
-  },
-  finalWinnerScoreText: {
-    color: theme.colors.textInverse,
-  },
-  finalDivider: {
-    height: 2,
-    backgroundColor: theme.colors.border,
-  },
-  championSection: {
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.base,
-    paddingHorizontal: theme.spacing.base,
-  },
-  championDivider: {
-    height: 1,
-    backgroundColor: theme.colors.border,
-    marginBottom: theme.spacing.md,
-  },
-  championLabel: {
-    fontSize: theme.typography.fontSize.xs,
-    color: theme.colors.textTertiary,
-    textAlign: 'center',
-    fontWeight: theme.typography.fontWeight.semibold,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    marginBottom: theme.spacing.xs,
-  },
-  championInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  championTrophy: {
-    fontSize: 20,
-    marginRight: theme.spacing.sm,
-  },
-  championName: {
-    fontSize: theme.typography.fontSize.base,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.primary,
-    flex: 1,
-    textAlign: 'center',
-  },
-  progressIndicator: {
-    position: 'absolute',
-    bottom: theme.spacing.lg,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    backgroundColor: theme.colors.backgroundCard + 'E6',
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.base,
-    marginHorizontal: theme.spacing.xl * 2,
-    borderRadius: theme.borderRadius.full,
-    ...theme.getCardShadow('lg'),
-  },
-  pulseIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.primary,
-    marginRight: theme.spacing.sm,
-  },
-  progressText: {
-    fontSize: theme.typography.fontSize.xs,
-    color: theme.colors.textTertiary,
-    fontWeight: theme.typography.fontWeight.medium,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 60,
-  },
-  emptyText: {
-    fontSize: theme.typography.fontSize.base,
-    color: theme.colors.textTertiary,
-    textAlign: 'center',
-  },
-  bracketContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
     gap: 16,
   },
   roundColumn: {
-    width: 280, // Cambiar de minWidth a width para forzar tamaño
+    minWidth: 240,
     gap: 12,
-  },
-  finalColumn: {
-    width: 300,
   },
   roundHeader: {
     backgroundColor: '#1E40AF',
@@ -453,20 +307,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
-  finalHeader: {
-    backgroundColor: '#DC2626',
-    paddingVertical: 14,
-  },
   roundTitle: {
     fontSize: 14,
     fontWeight: '700',
     color: '#FFFFFF',
     textTransform: 'uppercase',
     letterSpacing: 1,
-  },
-  finalTitle: {
-    fontSize: 16,
-    letterSpacing: 2,
   },
   matchesContainer: {
     gap: 20,
@@ -536,6 +382,134 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#E5E7EB',
   },
+  // Estilos de la FINAL
+  finalColumn: {
+    minWidth: 280,
+    marginHorizontal: theme.spacing.xl,
+  },
+  finalHeader: {
+    backgroundColor: '#DC2626',
+    paddingVertical: 16,
+    paddingHorizontal: theme.spacing.xl,
+    borderRadius: theme.borderRadius.lg,
+    marginBottom: theme.spacing.base,
+    alignItems: 'center',
+    ...theme.getCardShadow('xl'),
+  },
+  finalTitle: {
+    fontSize: 18,
+    fontWeight: theme.typography.fontWeight.black,
+    color: '#FFFFFF',
+    letterSpacing: 3,
+    textTransform: 'uppercase',
+  },
+  finalMatchCard: {
+    backgroundColor: theme.colors.backgroundCard,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 2,
+    borderColor: '#DC2626',
+    overflow: 'hidden',
+    ...theme.getCardShadow('xl'),
+  },
+  finalTeamRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: theme.spacing.base,
+    backgroundColor: '#F9FAFB',
+    gap: theme.spacing.md,
+  },
+  finalWinnerRow: {
+    backgroundColor: '#DBEAFE',
+  },
+  finalTeamLogo: {
+    width: 36,
+    height: 36,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.gray200,
+  },
+  finalTeamName: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.textSecondary,
+  },
+  finalWinnerText: {
+    color: theme.colors.textPrimary,
+    fontWeight: theme.typography.fontWeight.black,
+  },
+  finalScoreBox: {
+    width: 44,
+    height: 44,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  finalWinnerScore: {
+    backgroundColor: '#1E40AF',
+    borderColor: '#1E40AF',
+  },
+  finalScoreText: {
+    fontSize: 18,
+    fontWeight: theme.typography.fontWeight.black,
+    color: theme.colors.textSecondary,
+  },
+  finalWinnerScoreText: {
+    color: '#FFFFFF',
+  },
+  finalDivider: {
+    height: 1,
+    backgroundColor: theme.colors.border,
+  },
+  championSection: {
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.base,
+    paddingHorizontal: theme.spacing.base,
+  },
+  championDivider: {
+    height: 1,
+    backgroundColor: theme.colors.border,
+    marginBottom: theme.spacing.md,
+  },
+  championLabel: {
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.textTertiary,
+    textAlign: 'center',
+    fontWeight: theme.typography.fontWeight.semibold,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: theme.spacing.xs,
+  },
+  championInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  championTrophy: {
+    fontSize: 20,
+    marginRight: theme.spacing.sm,
+  },
+  championName: {
+    fontSize: theme.typography.fontSize.base,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.primary,
+    textAlign: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyText: {
+    fontSize: theme.typography.fontSize.base,
+    color: theme.colors.textTertiary,
+    textAlign: 'center',
+  },
   connector: {
     width: 40,
     alignItems: 'center',
@@ -549,19 +523,33 @@ const styles = StyleSheet.create({
   },
   scrollHint: {
     position: 'absolute',
-    bottom: 10,
+    bottom: 16,
     left: 0,
     right: 0,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scrollHintContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.backgroundCard + 'F0',
+    paddingHorizontal: theme.spacing.base,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.full,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...theme.getCardShadow('md'),
+    gap: theme.spacing.sm,
+  },
+  pulseIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.primary,
   },
   scrollHintText: {
-    fontSize: 12,
-    color: '#6B7280',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.textTertiary,
+    fontWeight: theme.typography.fontWeight.medium,
   },
 });
