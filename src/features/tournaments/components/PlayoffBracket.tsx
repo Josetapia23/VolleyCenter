@@ -24,11 +24,16 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
     );
   }
 
-  // Buscar la fase final
-  const finalPhase = sortedPhases.find(p =>
-    p.nombre.toLowerCase().includes('final') &&
-    !p.nombre.toLowerCase().includes('semifinal')
-  );
+  // Buscar la fase final (excluyendo octavos, cuartos, etc.)
+  const finalPhase = sortedPhases.find(p => {
+    const nombre = p.nombre.toLowerCase();
+    return (
+      nombre.includes('final') &&
+      !nombre.includes('semifinal') &&
+      !nombre.includes('octavos') &&
+      !nombre.includes('cuartos')
+    );
+  });
 
   // El resto de fases van en los lados
   const otherPhases = sortedPhases.filter(p => p !== finalPhase);
