@@ -53,25 +53,48 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
     console.log('✅ Todas las fases ya están presentes');
   }
 
-  // Separar la fase final del resto
+  // Separar las fases especiales: Final y Tercer Lugar
   const finalPhaseIndex = allPhases.findIndex(p => {
     const nombre = p.nombre.toLowerCase();
     return (
       nombre.includes('final') &&
       !nombre.includes('semifinal') &&
       !nombre.includes('octavos') &&
-      !nombre.includes('cuartos')
+      !nombre.includes('cuartos') &&
+      !nombre.includes('tercer') &&
+      !nombre.includes('3er')
     );
   });
 
+  const thirdPlaceIndex = allPhases.findIndex(p => {
+    const nombre = p.nombre.toLowerCase();
+    return nombre.includes('tercer') || nombre.includes('3er');
+  });
+
   const finalPhase = finalPhaseIndex >= 0 ? allPhases[finalPhaseIndex] : null;
-  const otherPhases = allPhases.filter((_, index) => index !== finalPhaseIndex);
+  const thirdPlacePhase = thirdPlaceIndex >= 0 ? allPhases[thirdPlaceIndex] : null;
+
+  // Filtrar las fases eliminando final y tercer lugar
+  const otherPhases = allPhases.filter((_, index) =>
+    index !== finalPhaseIndex && index !== thirdPlaceIndex
+  );
 
   console.log('Final:', finalPhase?.nombre || 'NO HAY');
+  console.log('Tercer lugar:', thirdPlacePhase?.nombre || 'NO HAY');
   console.log('Otras fases:', otherPhases.map(p => p.nombre));
 
   // Función para dividir partidos en dos mitades
+  // Solo divide si hay más de 2 partidos, de lo contrario muestra todo
   const splitMatches = (matches: PlayoffMatch[]) => {
+    // Si solo hay 1 o 2 partidos, no dividir (mostrar todo en el lado izquierdo)
+    if (matches.length <= 2) {
+      return {
+        left: matches,
+        right: []
+      };
+    }
+
+    // Si hay más de 2 partidos, dividir en mitades
     const half = Math.ceil(matches.length / 2);
     return {
       left: matches.slice(0, half),
@@ -195,6 +218,55 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
     );
   };
 
+  // Renderizar el partido de tercer lugar
+  const renderThirdPlaceMatch = () => {
+    if (!thirdPlacePhase || thirdPlacePhase.cruces.length === 0) return null;
+
+    const match = thirdPlacePhase.cruces[0];
+    const isWinner1 = match.resultado?.ganador === match.equipo_1.id;
+    const isWinner2 = match.resultado?.ganador === match.equipo_2.id;
+
+    return (
+      <View style={styles.thirdPlaceContainer}>
+        {/* Título Tercer Lugar */}
+        <View style={styles.thirdPlaceHeader}>
+          <Text style={styles.thirdPlaceTitle}>🥉 TERCER LUGAR</Text>
+        </View>
+
+        {/* Partido Tercer Lugar */}
+        <View style={styles.thirdPlaceMatchCard}>
+          {/* Equipo 1 */}
+          <View style={[styles.teamRow, isWinner1 && styles.winnerRow]}>
+            <Image source={{ uri: match.equipo_1.logo }} style={styles.teamLogo} />
+            <Text style={[styles.teamName, isWinner1 && styles.winnerText]} numberOfLines={1}>
+              {match.equipo_1.nombre}
+            </Text>
+            <View style={[styles.scoreBox, isWinner1 && styles.winnerScore]}>
+              <Text style={[styles.scoreText, isWinner1 && styles.winnerScoreText]}>
+                {match.resultado?.sets_equipo_1 ?? 0}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          {/* Equipo 2 */}
+          <View style={[styles.teamRow, isWinner2 && styles.winnerRow]}>
+            <Image source={{ uri: match.equipo_2.logo }} style={styles.teamLogo} />
+            <Text style={[styles.teamName, isWinner2 && styles.winnerText]} numberOfLines={1}>
+              {match.equipo_2.nombre}
+            </Text>
+            <View style={[styles.scoreBox, isWinner2 && styles.winnerScore]}>
+              <Text style={[styles.scoreText, isWinner2 && styles.winnerScoreText]}>
+                {match.resultado?.sets_equipo_2 ?? 0}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   // Renderizar conector visual
   const renderConnector = (key: string) => (
     <View key={key} style={styles.connector}>
@@ -223,7 +295,7 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
           nestedScrollEnabled={true}
         >
           <View style={styles.bracketContainer}>
-            {/* LADO IZQUIERDO: Octavos -> Cuartos -> Semis */}
+            {/* LADO IZQUIERDO: Octavos -> Cuartos -> Semis (dinámico) */}
             {otherPhases.map((phase, index) => {
               const { left } = splitMatches(phase.cruces);
               return (
@@ -234,12 +306,18 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
               );
             })}
 
-            {/* CENTRO: FINAL */}
-            {renderFinalColumn()}
+            {/* CENTRO: FINAL Y TERCER LUGAR */}
+            <View style={styles.centerContainer}>
+              {renderFinalColumn()}
+              {renderThirdPlaceMatch()}
+            </View>
 
-            {/* LADO DERECHO: Semis -> Cuartos -> Octavos (orden inverso) */}
+            {/* LADO DERECHO: Semis -> Cuartos -> Octavos (orden inverso, solo si hay partidos) */}
             {[...otherPhases].reverse().map((phase, index) => {
               const { right } = splitMatches(phase.cruces);
+              // Solo renderizar si hay partidos en el lado derecho
+              if (right.length === 0) return null;
+
               return (
                 <React.Fragment key={`right-${phase.nombre}-${index}`}>
                   {renderConnector(`right-conn-${index}`)}
@@ -392,10 +470,14 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#E5E7EB',
   },
+  // Contenedor central para Final y Tercer Lugar
+  centerContainer: {
+    gap: theme.spacing.xl,
+    alignItems: 'center',
+  },
   // Estilos de la FINAL
   finalColumn: {
     minWidth: 280,
-    marginHorizontal: theme.spacing.xl,
   },
   finalHeader: {
     backgroundColor: '#DC2626',
@@ -561,5 +643,34 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.xs,
     color: theme.colors.textTertiary,
     fontWeight: theme.typography.fontWeight.medium,
+  },
+  // Estilos del TERCER LUGAR
+  thirdPlaceContainer: {
+    minWidth: 280,
+    marginTop: theme.spacing.xl,
+  },
+  thirdPlaceHeader: {
+    backgroundColor: '#CD7F32', // Color bronce
+    paddingVertical: 12,
+    paddingHorizontal: theme.spacing.base,
+    borderRadius: theme.borderRadius.lg,
+    marginBottom: theme.spacing.md,
+    alignItems: 'center',
+    ...theme.getCardShadow('lg'),
+  },
+  thirdPlaceTitle: {
+    fontSize: 14,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: '#FFFFFF',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+  thirdPlaceMatchCard: {
+    backgroundColor: theme.colors.backgroundCard,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 2,
+    borderColor: '#CD7F32',
+    overflow: 'hidden',
+    ...theme.getCardShadow('lg'),
   },
 });
