@@ -1,6 +1,6 @@
 // src/features/tournaments/components/PlayoffBracket.tsx
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal } from 'react-native';
 import { PlayoffPhase, PlayoffMatch } from '../../../types/tournament';
 import { theme } from '../../../shared/theme';
 import { generateMissingPhases, hasMissingPhases } from '../utils/playoffGenerator';
@@ -11,11 +11,28 @@ interface PlayoffBracketProps {
 }
 
 export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchPress }) => {
+  // Estado para el modal de detalles del partido
+  const [selectedMatch, setSelectedMatch] = useState<PlayoffMatch | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+
   // Ordenar fases por orden (ascendente: octavos, cuartos, semis, final)
   const sortedPhases = [...phases].sort((a, b) => a.orden - b.orden);
 
   console.log('=== PLAYOFF BRACKET V5 - DISEÑO SIMÉTRICO ===');
   console.log('Total fases:', sortedPhases.length);
+
+  // Manejar clic en partido
+  const handleMatchPress = (match: PlayoffMatch) => {
+    // Solo abrir modal si el partido tiene resultado
+    if (match.resultado && match.estado === 'finalizado') {
+      setSelectedMatch(match);
+      setModalVisible(true);
+    }
+    // Llamar al handler opcional
+    if (onMatchPress) {
+      onMatchPress(match);
+    }
+  };
 
   if (sortedPhases.length === 0) {
     return (
@@ -106,9 +123,16 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
   const renderMatch = (match: PlayoffMatch) => {
     const isWinner1 = match.resultado?.ganador === match.equipo_1.id;
     const isWinner2 = match.resultado?.ganador === match.equipo_2.id;
+    const hasResult = match.resultado && match.estado === 'finalizado';
 
     return (
-      <View key={match.id_cruce} style={styles.matchCard}>
+      <TouchableOpacity
+        key={match.id_cruce}
+        style={styles.matchCard}
+        onPress={() => handleMatchPress(match)}
+        disabled={!hasResult}
+        activeOpacity={hasResult ? 0.7 : 1}
+      >
         {/* Equipo 1 */}
         <View style={[styles.teamRow, isWinner1 && styles.winnerRow]}>
           <Image source={{ uri: match.equipo_1.logo }} style={styles.teamLogo} />
@@ -136,7 +160,7 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
             </Text>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -165,6 +189,7 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
     const isWinner1 = match.resultado?.ganador === match.equipo_1.id;
     const isWinner2 = match.resultado?.ganador === match.equipo_2.id;
     const champion = isWinner1 ? match.equipo_1.nombre : isWinner2 ? match.equipo_2.nombre : null;
+    const hasResult = match.resultado && match.estado === 'finalizado';
 
     return (
       <View style={styles.finalColumn}>
@@ -175,7 +200,12 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
 
         {/* Partido Final */}
         <View style={styles.matchesContainer}>
-          <View style={styles.finalMatchCard}>
+          <TouchableOpacity
+            style={styles.finalMatchCard}
+            onPress={() => handleMatchPress(match)}
+            disabled={!hasResult}
+            activeOpacity={hasResult ? 0.7 : 1}
+          >
             {/* Equipo 1 */}
             <View style={[styles.finalTeamRow, isWinner1 && styles.finalWinnerRow]}>
               <Image source={{ uri: match.equipo_1.logo }} style={styles.finalTeamLogo} />
@@ -212,7 +242,7 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
                 <Text style={styles.championName}>🏆 {champion}</Text>
               </View>
             )}
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -225,6 +255,7 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
     const match = thirdPlacePhase.cruces[0];
     const isWinner1 = match.resultado?.ganador === match.equipo_1.id;
     const isWinner2 = match.resultado?.ganador === match.equipo_2.id;
+    const hasResult = match.resultado && match.estado === 'finalizado';
 
     return (
       <View style={styles.thirdPlaceContainer}>
@@ -234,7 +265,12 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
         </View>
 
         {/* Partido Tercer Lugar */}
-        <View style={styles.thirdPlaceMatchCard}>
+        <TouchableOpacity
+          style={styles.thirdPlaceMatchCard}
+          onPress={() => handleMatchPress(match)}
+          disabled={!hasResult}
+          activeOpacity={hasResult ? 0.7 : 1}
+        >
           {/* Equipo 1 */}
           <View style={[styles.teamRow, isWinner1 && styles.winnerRow]}>
             <Image source={{ uri: match.equipo_1.logo }} style={styles.teamLogo} />
@@ -262,7 +298,7 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
               </Text>
             </View>
           </View>
-        </View>
+        </TouchableOpacity>
       </View>
     );
   };
@@ -336,6 +372,127 @@ export const PlayoffBracket: React.FC<PlayoffBracketProps> = ({ phases, onMatchP
           <Text style={styles.scrollHintText}>Desliza horizontalmente</Text>
         </View>
       </View>
+
+      {/* Modal de detalles del partido */}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setModalVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalContent}
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
+            {selectedMatch && (
+              <>
+                {/* Header del Modal */}
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Detalles del Partido</Text>
+                  <TouchableOpacity
+                    onPress={() => setModalVisible(false)}
+                    style={styles.closeButton}
+                  >
+                    <Text style={styles.closeButtonText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Info de equipos */}
+                <View style={styles.modalTeamsContainer}>
+                  <View style={styles.modalTeamSection}>
+                    <Image source={{ uri: selectedMatch.equipo_1.logo }} style={styles.modalTeamLogo} />
+                    <Text style={styles.modalTeamName}>{selectedMatch.equipo_1.nombre}</Text>
+                  </View>
+                  <Text style={styles.modalVs}>VS</Text>
+                  <View style={styles.modalTeamSection}>
+                    <Image source={{ uri: selectedMatch.equipo_2.logo }} style={styles.modalTeamLogo} />
+                    <Text style={styles.modalTeamName}>{selectedMatch.equipo_2.nombre}</Text>
+                  </View>
+                </View>
+
+                {/* Resultado general */}
+                <View style={styles.modalScoreContainer}>
+                  <View style={styles.modalScoreBox}>
+                    <Text style={styles.modalScoreLabel}>Sets ganados</Text>
+                    <View style={styles.modalScoreRow}>
+                      <Text style={[
+                        styles.modalScoreValue,
+                        selectedMatch.resultado?.ganador === selectedMatch.equipo_1.id && styles.modalScoreWinner
+                      ]}>
+                        {selectedMatch.resultado?.sets_equipo_1 ?? 0}
+                      </Text>
+                      <Text style={styles.modalScoreSeparator}>-</Text>
+                      <Text style={[
+                        styles.modalScoreValue,
+                        selectedMatch.resultado?.ganador === selectedMatch.equipo_2.id && styles.modalScoreWinner
+                      ]}>
+                        {selectedMatch.resultado?.sets_equipo_2 ?? 0}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Detalles por set */}
+                <View style={styles.modalSetsContainer}>
+                  <Text style={styles.modalSetsTitle}>Puntos por Set</Text>
+                  {[1, 2, 3].map((setNum) => {
+                    const set1Key = `set_${setNum}_equipo_1` as keyof typeof selectedMatch.resultado;
+                    const set2Key = `set_${setNum}_equipo_2` as keyof typeof selectedMatch.resultado;
+                    const puntos1 = selectedMatch.resultado?.[set1Key] ?? 0;
+                    const puntos2 = selectedMatch.resultado?.[set2Key] ?? 0;
+
+                    // Solo mostrar sets jugados (donde al menos un equipo tenga puntos)
+                    if (puntos1 === 0 && puntos2 === 0) return null;
+
+                    const ganadorSet = puntos1 > puntos2 ? selectedMatch.equipo_1.id : selectedMatch.equipo_2.id;
+
+                    return (
+                      <View key={setNum} style={styles.modalSetRow}>
+                        <Text style={styles.modalSetLabel}>Set {setNum}</Text>
+                        <View style={styles.modalSetScores}>
+                          <Text style={[
+                            styles.modalSetScore,
+                            ganadorSet === selectedMatch.equipo_1.id && styles.modalSetScoreWinner
+                          ]}>
+                            {puntos1}
+                          </Text>
+                          <Text style={styles.modalSetScoreSeparator}>-</Text>
+                          <Text style={[
+                            styles.modalSetScore,
+                            ganadorSet === selectedMatch.equipo_2.id && styles.modalSetScoreWinner
+                          ]}>
+                            {puntos2}
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+
+                {/* Info adicional */}
+                {selectedMatch.fecha && (
+                  <View style={styles.modalInfoRow}>
+                    <Text style={styles.modalInfoLabel}>Fecha:</Text>
+                    <Text style={styles.modalInfoValue}>{selectedMatch.fecha}</Text>
+                  </View>
+                )}
+                {selectedMatch.ubicacion && (
+                  <View style={styles.modalInfoRow}>
+                    <Text style={styles.modalInfoLabel}>Ubicación:</Text>
+                    <Text style={styles.modalInfoValue}>{selectedMatch.ubicacion}</Text>
+                  </View>
+                )}
+              </>
+            )}
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
@@ -672,5 +829,177 @@ const styles = StyleSheet.create({
     borderColor: '#CD7F32',
     overflow: 'hidden',
     ...theme.getCardShadow('lg'),
+  },
+  // Estilos del Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.base,
+  },
+  modalContent: {
+    backgroundColor: theme.colors.backgroundCard,
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.xl,
+    width: '90%',
+    maxWidth: 500,
+    maxHeight: '80%',
+    ...theme.getCardShadow('xl'),
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+    paddingBottom: theme.spacing.md,
+    borderBottomWidth: 2,
+    borderBottomColor: theme.colors.border,
+  },
+  modalTitle: {
+    fontSize: theme.typography.fontSize.xl,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.textPrimary,
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.gray200,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    fontSize: 20,
+    color: theme.colors.textSecondary,
+    fontWeight: theme.typography.fontWeight.bold,
+  },
+  modalTeamsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+  },
+  modalTeamSection: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  modalTeamLogo: {
+    width: 60,
+    height: 60,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.gray200,
+    marginBottom: theme.spacing.sm,
+  },
+  modalTeamName: {
+    fontSize: theme.typography.fontSize.sm,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.textPrimary,
+    textAlign: 'center',
+  },
+  modalVs: {
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.textTertiary,
+    marginHorizontal: theme.spacing.md,
+  },
+  modalScoreContainer: {
+    marginBottom: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    backgroundColor: theme.colors.gray50,
+    borderRadius: theme.borderRadius.lg,
+  },
+  modalScoreBox: {
+    alignItems: 'center',
+  },
+  modalScoreLabel: {
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.textTertiary,
+    fontWeight: theme.typography.fontWeight.medium,
+    marginBottom: theme.spacing.sm,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  modalScoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+  },
+  modalScoreValue: {
+    fontSize: 36,
+    fontWeight: theme.typography.fontWeight.black,
+    color: theme.colors.textSecondary,
+  },
+  modalScoreWinner: {
+    color: theme.colors.primary,
+  },
+  modalScoreSeparator: {
+    fontSize: 24,
+    color: theme.colors.textTertiary,
+    fontWeight: theme.typography.fontWeight.bold,
+  },
+  modalSetsContainer: {
+    marginBottom: theme.spacing.lg,
+  },
+  modalSetsTitle: {
+    fontSize: theme.typography.fontSize.base,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.md,
+  },
+  modalSetRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.base,
+    backgroundColor: theme.colors.backgroundCard,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  modalSetLabel: {
+    fontSize: theme.typography.fontSize.base,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.textPrimary,
+  },
+  modalSetScores: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  modalSetScore: {
+    fontSize: theme.typography.fontSize.xl,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.textSecondary,
+    minWidth: 32,
+    textAlign: 'center',
+  },
+  modalSetScoreWinner: {
+    color: theme.colors.primary,
+  },
+  modalSetScoreSeparator: {
+    fontSize: theme.typography.fontSize.base,
+    color: theme.colors.textTertiary,
+  },
+  modalInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.base,
+    backgroundColor: theme.colors.gray50,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.sm,
+  },
+  modalInfoLabel: {
+    fontSize: theme.typography.fontSize.sm,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.textTertiary,
+  },
+  modalInfoValue: {
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.textPrimary,
   },
 });
